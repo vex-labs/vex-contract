@@ -4,15 +4,15 @@ This repo holds the VEX betting smart contract.
 
 # Contriubting
 
-[!CAUTION]
-Do **NOT** push directly to or merge your own commits into main. This repo has no branch protection rules so no warning will displayed if you try to do this.
+> [!Caution]
+> Do **NOT** push directly to or merge your own commits into main. This repo has no branch protection rules so no warning will displayed if you try to do this.
 
 To contribute:
 1) Open a new branch with an appropriate name and select main as the source.
-2) Create a draft PR from your branch into main.
-3) If your contribution solves an issue please write "Closes #issue-number" in the PR.
-4) Commit your code to your branch. 
-5) Once your PR is ready click "Ready for Review" and add Owen (PiVortex) as a reviewer.
+2) Commit your code to your branch.
+3) Create a PR to main from your branch
+4) If your contribution solves an issue please write "Closes #issue-number" in the PR.
+5) Select Owen (PiVortex) as a reviewer.
 
 If you need any help with this please don't hesitate to ask for help.
 
