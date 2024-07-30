@@ -10,7 +10,7 @@ This repo holds the VEX betting smart contract.
 To contribute:
 1) Open a new branch with an appropriate name and select main as the source.
 2) Commit your code to your branch.
-3) Create a PR to main from your branch
+3) Create a PR to main from your branch.
 4) If your contribution solves an issue please write "Closes #issue-number" in the PR.
 5) Select Owen (PiVortex) as a reviewer.
 
@@ -37,7 +37,7 @@ If you need any help with this please don't hesitate to ask for help.
 
 ### ft_on_transfer
 
-Used to place a bet on a match
+Used to place a bet on a match.
 
 **ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> PromiseOrValue&lt;U128&gt;** 
 
@@ -45,7 +45,8 @@ Used to place a bet on a match
 2) Decerializes `msg`.
 3) Fetches the match with the specified match ID.
 4) Inserts a new `Bet` into `bets` for the specified match with the correct bet details and reinserts the match.
-5) Returns U128(0).   
+5) Inserts the `BetId` and `MatchId` into `bets_by_user`. 
+6) Returns U128(0).   
 
 - **sender_id: AccountId** The account ID of the bettor.
 - **amount: U128** The bet amount in USDC.
@@ -77,12 +78,12 @@ Returns the amount in USDC that the bettor receives.
 
 Used by a bettor to claim bet refunds when a match has an error or is canceled.
 
-**claim_winnings(&mut self, match_id: MatchID, bet_id: BetID) -> U128**
+**claim_refund(&mut self, match_id: MatchID, bet_id: BetID) -> U128**
 
 1) Fetches the relevant bid from the relevant match.
 2) Checks that `match_state` is `Error`.
 3) Checks that the predecessor is equal to `bettor`.
-4) Checks that `pay_state` is `None`
+4) Checks that `pay_state` is `None`.
 5) Transfers USDC equal to `bet_amount` to the `bettor`.
 6) Changes `pay_state` to `RefundPaid`.
 7) Returns `bet_amount`.
@@ -97,21 +98,21 @@ Returns the amount in USDC that the bettor receives.
 
 ### create_match
 
-Used to create a new match
+Used to create a new match.
 
-**create_match(&mut self. game: String, team_1: String, team_2, String, in_odds_1: f32, in_odds_2: f32, date: String)**
+**create_match(&mut self, game: String, team_1: String, team_2: String, in_odds_1: f64, in_odds_2: f64, date: String)**
 
 1) Checks that the `admin` is calling the method.
 2) Creates the match ID.
 3) Determines the initial odds of the game by adjusting the in odds to be a total implied probability of 105%.
-4) Dertermines the inital pool sizes by multiplying the inital probability of each team winning by the `weight_factor`
+4) Dertermines the inital pool sizes by multiplying the inital probability of each team winning by the `weight_factor`.
 5) Creates a new match and adds it to `matches`.
 
 - **game: String** What game the match is, e.g. Valorent, Overwatch, etc.
 - **team_1: String** Name of the first team.
 - **team_2: String** Name of the second team.
-- **in_odds_1: f32** Average external odds for team 1 to win.
-- **in_odds_2: f32** Average external odds for team 2 to win.
+- **in_odds_1: f64** Average external odds for team 1 to win.
+- **in_odds_2: f64** Average external odds for team 2 to win.
 - **date: String** The date the match is taking place.
 
 
@@ -123,7 +124,8 @@ Used to close betting on the match.
 
 1) Checks that the `admin` is calling the method.
 2) Fetches the relevant match from `matches`.
-3) Changes `match_state` to `Current`
+3) Checks that the match has the `match_state` `Future`
+4) Changes `match_state` to `Current`
 
 - **match_id: MatchID** The match ID of the match that betting is being ended for.
 
@@ -135,8 +137,9 @@ Used when a match finishes.
 
 1) Checks that the `admin` is calling the method.
 2) Fetches the relevant match from `matches`.
-3) Changes `match_state` to `Finished`.
-4) Changes `winner`.
+3) Checks that the match has the `match_state` `Current`
+4) Changes `match_state` to `Finished`.
+5) Changes `winner`.
 
 - **match_id: MatchID** The match ID of the match that is finished.
 
@@ -145,14 +148,14 @@ Used when a match finishes.
 
 Used when there is an error with a match or the match is canceled.
 
-**cancel_match(&mut self, match_id: MatchID, match_state: MatchState)**
+**cancel_match(&mut self, match_id: MatchID)**
 
 1) Checks that the `admin` is calling the method.
-2) Checks whether the `match_state` is `Future` or `Current`.
-3) Changes the `match_state` to `Error`.
+2) Fetches the relevant match from `matches`.
+3) Checks whether the `match_state` is `Future` or `Current`.
+4) Changes the `match_state` to `Error`.
 
 - **match_id: MatchID** The match ID of the match that is being canceled.
-- **match_state: MatchState** The state that the match is in, here it is either `Future` or `Current`.
 
 ### change_admin
 
@@ -161,7 +164,7 @@ Used to change the admin of the betting contract.
 **change_admin(&mut self, new_admin: AccountId)**
 
 1) Checks that the `admin` is calling the method.
-2) Changes `admin` to `new_admin`
+2) Changes `admin` to `new_admin`.
 
 - **new_admin: AccountId** The account ID of the new admin.
 
@@ -173,7 +176,7 @@ Initializes the contract.
 
 **init(&mut self, admin: AccountId)**
 
-1) Sets the maps to empty
+1) Sets the maps to empty.
 2) Sets `last_bet_id` to 0.
 3) Sets the `admin`.
 
@@ -200,7 +203,7 @@ Returns a vector of matches to display.
 
 Fetches a single match.
 
-**get_match(&self. match_id: MatchID) -> DisplayMatch**
+**get_match(&self, match_id: MatchID) -> DisplayMatch**
 
 1) Fetches the relevant match from `matches`.
 2) Converts from `Match` to `DisplayMatch` using `format_match`.
@@ -218,12 +221,12 @@ Gets the amount in USDC the bettor would receive if they were to make a bet righ
 
 1) Fetches the relevant match from `matches`.
 2) Checks which team they have picked.
-3) Gets the potential winnings via `determine_potential_winnings`
-4) Return the potential winnings
+3) Gets the potential winnings via `determine_potential_winnings`.
+4) Return the potential winnings.
 
 - **match_id: MatchID** The match ID of the match the bettor would bet on.
 - **team: Team** The team that the bettor would bet on.
-- **bet_amount: U128** The amount in USDC the bettor would bet/
+- **bet_amount: U128** The amount in USDC the bettor would bet.
 
 Returns the potential winnings.
 
@@ -250,7 +253,7 @@ Fetches a vector of bet Ids and their associated match IDs within a limit for a 
 
 1) If `from_index` is `None` set to 0 and if `limit` is `None` then it is set to the number of bets for the bettor.
 2) Iterate through the map of bet IDs.
-3) For each `BetId` add `BetId` and `MatchId` to a vector 
+3) For each `BetId` add `BetId` and `MatchId` to a vector.
 4) Return the vector.
 
 - **from_index: Option&lt;U64&gt;** Specifies the index at which the method will start iterating.
@@ -258,13 +261,23 @@ Fetches a vector of bet Ids and their associated match IDs within a limit for a 
 
 Returns a vector of BetIds and their associated match IDs.
 
+### get_admin 
+
+Fetches the admin of the contract.
+
+**get_admin(&self) -> AccountId**
+
+1) Returns `admin`.
+
+Returns the admin of the contract.
+
 ## Internal functions 
 
 ### determine_approx_odds
 
-Calculates the approximate odds for a match. These odds are if the bettor were to bet an infitesimle amount.
+Calculates the approximate odds for a match. These odds are if the bettor were to bet an infinitesimal amount.
 
-**determine_approx_odds(team_1_total_bets: U128, team_2_total_bets: U128) -> (f32, f32)**
+**determine_approx_odds(team_1_total_bets: U128, team_2_total_bets: U128) -> (f64, f64)**
 
 1) Calculates approximate odds.
 2) Returns approximate odds.
@@ -287,7 +300,7 @@ Calculates the potential winnings for a bet.
 - **other_team_total_bets: U128** Total bets on the non-selected team in USDC, this includes initial weightings.
 - **bet_amount: U128** The bet amount in USDC for the bet.
 
-Returns the potential winnings in USDC for a bet
+Returns the potential winnings in USDC for a bet.
 
 ### format_match
 
@@ -314,15 +327,15 @@ Checks that a user has deposited 1 YoctoNEAR in the current call.
 
 ### Contract
 
-The entry structure for the contract
+The entry structure for the contract.
 
 - **matches: IterableMap&lt;MatchId, Match&gt;** A map of matches yet to take place. 
 - **bets_by_user: LookupMap&lt;AccountId, IterableMap&lt;BetId, MatchId&gt;&gt;** A map that gives the bet IDs and the match ID of the match the bet was placed on.
-- **last_bet_id: U64** An integer that stores the bet ID of the last bet. Used for inputting what the next bet ID will be. 
+- **last_bet_id: BetId** An integer that stores the bet ID of the last bet. Used for inputting what the next bet ID will be. 
 - **admin: AccountID** Sets the account ID of the account that can call admin methods. The oracle will be the admin.
 
 
-## Match
+### Match
 
 Stores the necessary information for a match.
 
@@ -330,11 +343,11 @@ Stores the necessary information for a match.
 - **team_1: String** Name of team 1.
 - **team_2: String** Name of team 2.
 - **team_1_total_bets: U128** Total bets on team 1 in USDC, this includes initial weightings.
-- **team_2_total_bet: U128** Total bets on team 2 in USDC, this includes initial weightings.
+- **team_2_total_bets: U128** Total bets on team 2 in USDC, this includes initial weightings.
 - **team_1_inital_pool: U128** Initial weightings adding to team 1's pool from initial odds.
 - **team_2_inital_pool: U128** Initial weightings adding to team 2's pool from initial odds.
 - **match_state: MatchState** An enumeration dictating what state the match is in.
-- **winner: Winner** An enumeration storing the winner of the match.
+- **winner: Team** An enumeration storing the winner of the match.
 - **bets: IterableMap&lt;BetID, Bet&gt;** A map of bets made on the match.
 
 
@@ -360,34 +373,7 @@ Stores the necessary information when fetching a match.
 - **team_1_real_bets: U128** Total actual bets placed on team 1.
 - **team_2_real_bets: U128** Total actual bets placed on team 2.
 - **match_state: MatchState** An enumeration dictating what state the match is in.
-- **winner: Winner** An enumeration storing the winner of the match.
-
-## Enumerations
-
-### Winner
-
-Stores which team is the winner of a match.
-
-- **TBD** The match is yet to end thus the winner is yet to be decided.
-- **MatchError** The match had an error or was canceled thus no winner could be decided.
-- **Team1** Team 1 won the match.
-- **Team2** Team 2 won the match.
-
-
-### Team
-
-Stores which team a bettor has bet on.
-
-- **Team1** They have bet on team 1.
-- **Team2** They have bet on team 2.
-
-
-### PayState
-
-Stores whether a bettor has been paid or not.
-
-- **Paid** The bettor has been paid the amount equal to `potential_winnings`.
-- **RefundPaid** The bettor has been paid the amount equal to `bet_amount`.
+- **winner: Team** An enumeration storing the winner of the match.
 
 ### BetInfo
 
@@ -395,6 +381,22 @@ Stores the information needed to place a bet provided by `msg` from `ft_on_trans
 
 - **match_id: MatchID** Stores the match ID of the match the bettor is placing a bet on. 
 - **team: Team** Stores which team the bettor is placing a bet on.
+
+## Enumerations
+
+### Team
+
+Stores which the team as an enum
+
+- **Team1** Team 1
+- **Team2** Team 2.
+
+### PayState
+
+Stores whether a bettor has been paid or not.
+
+- **Paid** The bettor has been paid the amount equal to `potential_winnings`.
+- **RefundPaid** The bettor has been paid the amount equal to `bet_amount`.
 
 ### MatchState
 
@@ -413,7 +415,7 @@ Stores what state a match is in.
 
 ## Constants
 
-**weight_factor: U64** Sets the weight of the initial odds. If this is higher then the odds will change less on user bets, more so initially. Initially set to 1000. 
+**WEIGHT_FACTOR: f64** Sets the weight of the initial odds. If this is higher then the odds will change less on user bets, more so initially. Initially set to 1000. 
 
 # Uncertainties and considerations
 
@@ -421,3 +423,6 @@ Stores what state a match is in.
 - Is it better to have all the instances of Bet not stored in a Match and instead just list the bet IDs and Bets live independently of matches? I think it's best to have it nested (as it is right now) as when I am accessing a bet it will be related to a match unless it is a view method.
 - Check how much storage is being used to place a bet, there may need to be restrictions on this as people can just place a million bets and use all the storage in the contract. For now, set the minimum bet to 1 USDC.
 - Currently, matches and their associated bets stay in the contract forever which uses a lot of storage. Consider deleting matches. Can we just index historical data instead?
+- get_matches currently fetches all types of matches, change to input the MatchStatus to get matches in certain statuses.
+- Do I need bets_by_user if I'm using an indexer?
+- Take a look at using U128 instead of f64 for odds, look how price oracles do it.
