@@ -5,11 +5,14 @@ use crate::bettor::determine_potential_winnings;
 use crate::*;
 
 #[allow(dead_code)]
+#[near(serializers = [json])]
 pub struct DisplayMatch {
     match_id: MatchId,
     game: String,
     team_1: String,
     team_2: String,
+    team_1_odds: f64,
+    team_2_odds: f64,
     team_1_real_bets: U128,
     team_2_real_bets: U128,
     match_state: MatchState,
@@ -58,6 +61,7 @@ impl Contract {
             .get(match_id)
             .unwrap_or_else(|| panic!("No match exists with match id: {}", match_id));
 
+        // Return potential winnings
         determine_potential_winnings(
             team,
             &relevant_match.team_1_total_bets,
@@ -95,6 +99,7 @@ impl Contract {
         let from = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(self.matches.len());
 
+        // Return bet IDs and their match IDs
         relevant_user_bets
             .iter()
             .skip(from as usize)
@@ -105,11 +110,18 @@ impl Contract {
 }
 
 fn format_match(match_id: &MatchId, match_struct: &Match) -> DisplayMatch {
+    let (team_1_odds, team_2_odds) = determine_approx_odds(
+        &match_struct.team_1_total_bets,
+        &match_struct.team_2_total_bets,
+    );
+
     DisplayMatch {
         match_id: match_id.clone(), // Assuming there's a match_id field in Match
         game: match_struct.game.clone(),
         team_1: match_struct.team_1.clone(),
         team_2: match_struct.team_2.clone(),
+        team_1_odds,
+        team_2_odds,
         team_1_real_bets: U128(
             match_struct.team_1_total_bets.0 - match_struct.team_1_initial_pool.0,
         ),
@@ -119,4 +131,25 @@ fn format_match(match_id: &MatchId, match_struct: &Match) -> DisplayMatch {
         match_state: match_struct.match_state.clone(),
         winner: match_struct.winner.clone(),
     }
+}
+
+fn determine_approx_odds(team_1_total_bets: &U128, team_2_total_bets: &U128) -> (f64, f64) {
+    let team_1_bets: f64 = team_1_total_bets.0 as f64;
+    let team_2_bets: f64 = team_2_total_bets.0 as f64;
+
+    // Calculate total bets
+    let total_bets = team_1_bets + team_2_bets;
+
+    // Calculate the divider to make the implied probability sum to 1.05
+    let divider = total_bets / 1.05; // Market margin is set to 5%
+
+    // Calculate implied probabilities
+    let implied_prob_1 = team_1_bets / divider;
+    let implied_prob_2 = team_2_bets / divider;
+
+    // Calculate odds
+    let team_1_odds = (100.0 / implied_prob_1).round() / 100.0;
+    let team_2_odds = (100.0 / implied_prob_2).round() / 100.0;
+
+    (team_1_odds, team_2_odds)
 }

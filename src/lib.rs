@@ -66,6 +66,7 @@ pub type BetId = U64;
 
 pub const WEIGHT_FACTOR: f64 = 1000.0;
 pub const USDC_CONTRACT_ID: &'static str = "cusd.fakes.testnet";
+const ONE_USDC: U128 = U128(1_000_000_000_000_000_000_000_000);
 
 #[near]
 impl Contract {
