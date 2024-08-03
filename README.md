@@ -2,7 +2,7 @@
 
 This repo holds the VEX betting smart contract.
 
-# Contriubting
+# Contributing
 
 > [!Caution]
 > Do **NOT** push directly to or merge your own commits into main. This repo has no branch protection rules so no warning will displayed if you try to do this.
@@ -16,6 +16,10 @@ To contribute:
 
 If you need any help with this please don't hesitate to ask for help.
 
+# Deployments
+
+- A stable contract (the last release) is deployed at "TBD".
+- An unstable development contract is deployed at "TBD".
 
 # Flow
 
@@ -42,11 +46,13 @@ Used to place a bet on a match.
 **ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> PromiseOrValue&lt;U128&gt;** 
 
 1) Checks that the token is USDC.
-2) Decerializes `msg`.
-3) Fetches the match with the specified match ID.
-4) Inserts a new `Bet` into `bets` for the specified match with the correct bet details and reinserts the match.
-5) Inserts the `BetId` and `MatchId` into `bets_by_user`. 
-6) Returns U128(0).   
+2) Checks they have bet one or more USDC.
+3) Decerializes `msg`.
+4) Fetches the match with the specified match ID and checks `match_state` is `Future`.
+5) Calculate `potential_winnings`.
+6) Inserts a new `Bet` into `bets` for the specified match with the correct bet details and reinserts the match.
+7) Inserts the `BetId` and `MatchId` into `bets_by_user`. 
+8) Returns U128(0).   
 
 - **sender_id: AccountId** The account ID of the bettor.
 - **amount: U128** The bet amount in USDC.
@@ -105,7 +111,7 @@ Used to create a new match.
 1) Checks that the `admin` is calling the method.
 2) Creates the match ID.
 3) Determines the initial odds of the game by adjusting the in odds to be a total implied probability of 105%.
-4) Dertermines the inital pool sizes by multiplying the inital probability of each team winning by the `weight_factor`.
+4) Dertermines the inital pool sizes by multiplying the inital probability of each team winning by the `WEIGHT_FACTOR`.
 5) Creates a new match and adds it to `matches`.
 
 - **game: String** What game the match is, e.g. Valorent, Overwatch, etc.
@@ -347,7 +353,7 @@ Stores the necessary information for a match.
 - **team_1_inital_pool: U128** Initial weightings adding to team 1's pool from initial odds.
 - **team_2_inital_pool: U128** Initial weightings adding to team 2's pool from initial odds.
 - **match_state: MatchState** An enumeration dictating what state the match is in.
-- **winner: Team** An enumeration storing the winner of the match.
+- **winner: Option<Team>** An enumeration storing the winner of the match.
 - **bets: IterableMap&lt;BetID, Bet&gt;** A map of bets made on the match.
 
 
@@ -415,7 +421,9 @@ Stores what state a match is in.
 
 ## Constants
 
-**WEIGHT_FACTOR: f64** Sets the weight of the initial odds. If this is higher then the odds will change less on user bets, more so initially. Initially set to 1000. 
+**WEIGHT_FACTOR: f64 = 1000.0** Sets the weight of the initial odds. If this is higher then the odds will change less on user bets, more so initially. 
+
+**USDC_CONTRACT_ID: &'static str = "cusd.fakes.testnet"** States the account ID of the USDC contract. 
 
 # Uncertainties and considerations
 

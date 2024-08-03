@@ -1,12 +1,14 @@
-pub mod admin;
-pub mod bettor;
-pub mod view;
-
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::{IterableMap, LookupMap};
 use near_sdk::{near, AccountId, PanicOnDefault};
 
+pub mod admin;
+pub mod bettor;
+pub mod ext;
+pub mod view;
+
 #[near(contract_state)]
+#[derive(PanicOnDefault)]
 pub struct Contract {
     matches: IterableMap<MatchId, Match>,
     bets_by_user: LookupMap<AccountId, IterableMap<BetId, MatchId>>,
@@ -15,7 +17,6 @@ pub struct Contract {
 }
 
 #[near(serializers = [borsh])]
-#[derive(PanicOnDefault)]
 pub struct Match {
     game: String,
     team_1: String,
@@ -33,16 +34,16 @@ pub struct Match {
 pub struct Bet {
     bettor: AccountId,
     team: Team,
+    bet_amount: U128,
     potential_winnings: U128,
     pay_state: Option<PayState>,
 }
 
+#[derive(PartialEq, Clone)]
 #[near(serializers = [json, borsh])]
 pub enum Team {
     Team1,
     Team2,
-    TBD,
-    Error,
 }
 
 #[near(serializers = [json, borsh])]
@@ -51,6 +52,7 @@ pub enum PayState {
     RefundPaid,
 }
 
+#[derive(Clone)]
 #[near(serializers = [json, borsh])]
 pub enum MatchState {
     Future,
@@ -63,6 +65,7 @@ pub type MatchId = String;
 pub type BetId = U64;
 
 pub const WEIGHT_FACTOR: f64 = 1000.0;
+pub const USDC_CONTRACT_ID: &'static str = "cusd.fakes.testnet";
 
 #[near]
 impl Contract {

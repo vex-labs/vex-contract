@@ -1,5 +1,6 @@
-use crate::*;
 use near_sdk::{env, near, require};
+
+use crate::*;
 
 #[near]
 impl Contract {
@@ -28,15 +29,13 @@ impl Contract {
 
         let match_id: MatchId = format!("{}-{}-{}", team_1, team_2, date);
 
-        let in_prob_1: f64 = 1.0 / in_odds_1; // Changes initial decimal odds to initial probability
+        let in_prob_1: f64 = 1.0 / in_odds_1;
         let in_prob_2: f64 = 1.0 / in_odds_2;
-        let divider: f64 = in_prob_1 + in_prob_2;
-        let actual_prob_1: f64 = in_prob_1 / divider;
-        let actual_prob_2: f64 = in_prob_2 / divider;
-        let team_1_total_bets_f64: f64 = (actual_prob_1 * WEIGHT_FACTOR).round();
-        let team_2_total_bets_f64: f64 = (actual_prob_2 * WEIGHT_FACTOR).round();
-        let team_1_total_bets = U128(team_1_total_bets_f64 as u128);
-        let team_2_total_bets = U128(team_2_total_bets_f64 as u128);
+        let divider = in_prob_1 + in_prob_2;
+        let actual_prob_1 = in_prob_1 / divider;
+        let actual_prob_2 = in_prob_2 / divider;
+        let team_1_total_bets = U128((actual_prob_1 * WEIGHT_FACTOR).round() as u128);
+        let team_2_total_bets = U128((actual_prob_2 * WEIGHT_FACTOR).round() as u128);
 
         let match_state = MatchState::Future;
         let winner: Option<Team> = None;
@@ -58,7 +57,7 @@ impl Contract {
         self.matches.insert(match_id, new_match);
     }
 
-    pub fn end_betting(&mut self, match_id: MatchId) {
+    pub fn end_betting(&mut self, match_id: &MatchId) {
         require!(
             env::predecessor_account_id() == self.admin,
             "Only the admin can call this method"
@@ -66,20 +65,18 @@ impl Contract {
 
         let relevant_match = self
             .matches
-            .get_mut(&match_id)
+            .get_mut(match_id)
             .unwrap_or_else(|| panic!("No match exists with match id: {}", match_id));
 
-        match relevant_match.match_state {
-            MatchState::Future => {
-                relevant_match.match_state = MatchState::Current;
-            }
-            _ => {
-                panic!("Match state must be Future to call this method");
-            }
-        }
+        require!(
+            matches!(relevant_match.match_state, MatchState::Future),
+            "Match state must be Future to end betting"
+        );
+
+        relevant_match.match_state = MatchState::Current;
     }
 
-    pub fn finish_match(&mut self, match_id: MatchId) {
+    pub fn finish_match(&mut self, match_id: &MatchId) {
         require!(
             env::predecessor_account_id() == self.admin,
             "Only the admin can call this method"
@@ -87,20 +84,18 @@ impl Contract {
 
         let relevant_match = self
             .matches
-            .get_mut(&match_id)
+            .get_mut(match_id)
             .unwrap_or_else(|| panic!("No match exists with match id: {}", match_id));
 
-        match relevant_match.match_state {
-            MatchState::Current => {
-                relevant_match.match_state = MatchState::Finished;
-            }
-            _ => {
-                panic!("Match state must be Current to call this method");
-            }
-        }
+        require!(
+            matches!(relevant_match.match_state, MatchState::Current),
+            "Match state must be Current to finish the match"
+        );
+
+        relevant_match.match_state = MatchState::Finished;
     }
 
-    pub fn cancel_match(&mut self, match_id: MatchId) {
+    pub fn cancel_match(&mut self, match_id: &MatchId) {
         require!(
             env::predecessor_account_id() == self.admin,
             "Only the admin can call this method"
@@ -108,16 +103,17 @@ impl Contract {
 
         let relevant_match = self
             .matches
-            .get_mut(&match_id)
+            .get_mut(match_id)
             .unwrap_or_else(|| panic!("No match exists with match id: {}", match_id));
 
-        match relevant_match.match_state {
-            MatchState::Future | MatchState::Current => {
-                relevant_match.match_state = MatchState::Error;
-            }
-            _ => {
-                panic!("Match state must be Future or Current to call this method");
-            }
-        }
+        require!(
+            matches!(
+                relevant_match.match_state,
+                MatchState::Future | MatchState::Current
+            ),
+            "Match state must be Future or Current to cancel the match"
+        );
+
+        relevant_match.match_state = MatchState::Error;
     }
 }
