@@ -19,7 +19,7 @@ If you need any help with this please don't hesitate to ask for help.
 # Deployments
 
 - A stable contract (the last release) is deployed at "TBD".
-- An unstable development contract is deployed at "TBD".
+- An unstable development contract is deployed at meowwwww.testnet.
 
 # Flow
 
@@ -43,16 +43,17 @@ If you need any help with this please don't hesitate to ask for help.
 
 Used to place a bet on a match.
 
-**ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> PromiseOrValue&lt;U128&gt;** 
+**ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) U128** 
 
 1) Checks that the token is USDC.
 2) Checks they have bet one or more USDC.
 3) Decerializes `msg`.
 4) Fetches the match with the specified match ID and checks `match_state` is `Future`.
-5) Calculate `potential_winnings`.
-6) Inserts a new `Bet` into `bets` for the specified match with the correct bet details and reinserts the match.
-7) Inserts the `BetId` and `MatchId` into `bets_by_user`. 
-8) Returns U128(0).   
+5) Adds bet amount to correct team's total bets
+6) Inserts the `BetId` and `MatchId` into `bets_by_user`. 
+7) Calculates `potential_winnings` using `determine_potential_winnings`.
+8) Inserts a new `Bet` into `bets` for the specified match with the correct bet details and reinserts the match.
+9) Returns U128(0).   
 
 - **sender_id: AccountId** The account ID of the bettor.
 - **amount: U128** The bet amount in USDC.
@@ -65,18 +66,19 @@ Returns the leftover USDC from the call, which will always be zero.
 
 Used by a bettor to claim bet winnings.
 
-**claim_winnings(&mut self, match_id: MatchID, bet_id: BetID) -> U128**
+**claim_winnings(&mut self, match_id: &MatchID, bet_id: &BetID) -> U128**
 
 1) Fetches the relevant bid from the relevant match.
 2) Checks that `match_state` is `Finished`.
 3) Checks that the predecessor is equal to `bettor`.
-4) Checks that `pay_state` is `None`
-5) Transfers USDC equal to `potential_winnings` to the `bettor`.
-6) Changes `pay_state` to `Paid`.
-7) Returns `potential_winnings`.
+4) Checks that `pay_state` is `None`.
+5) Checks that they selected the winning team.
+6) Transfers USDC equal to `potential_winnings` to the `bettor`.
+7) Changes `pay_state` to `Paid`.
+8) Returns `potential_winnings`.
 
-- **match_id: MatchID** The match ID of the match for which the bet was placed on.
-- **bet_id: BetID** The bet ID of the bet the bettor is claiming their winnings for.
+- **match_id: &MatchID** The match ID of the match for which the bet was placed on.
+- **bet_id: &BetID** The bet ID of the bet the bettor is claiming their winnings for.
 
 Returns the amount in USDC that the bettor receives.
 
@@ -84,7 +86,7 @@ Returns the amount in USDC that the bettor receives.
 
 Used by a bettor to claim bet refunds when a match has an error or is canceled.
 
-**claim_refund(&mut self, match_id: MatchID, bet_id: BetID) -> U128**
+**claim_refund(&mut self, match_id: &MatchID, bet_id: &BetID) -> U128**
 
 1) Fetches the relevant bid from the relevant match.
 2) Checks that `match_state` is `Error`.
@@ -94,8 +96,8 @@ Used by a bettor to claim bet refunds when a match has an error or is canceled.
 6) Changes `pay_state` to `RefundPaid`.
 7) Returns `bet_amount`.
 
-- **match_id: MatchID** The match ID of the match for which the bet was placed on.
-- **bet_id: BetID** The bet ID of the bet the bettor is claiming their refund for.
+- **match_id: &MatchID** The match ID of the match for which the bet was placed on.
+- **bet_id: &BetID** The bet ID of the bet the bettor is claiming their refund for.
 
 Returns the amount in USDC that the bettor receives.
 
@@ -110,9 +112,8 @@ Used to create a new match.
 
 1) Checks that the `admin` is calling the method.
 2) Creates the match ID.
-3) Determines the initial odds of the game by adjusting the in odds to be a total implied probability of 105%.
-4) Dertermines the inital pool sizes by multiplying the inital probability of each team winning by the `WEIGHT_FACTOR`.
-5) Creates a new match and adds it to `matches`.
+3) Determines the inital pool sizes by multiplying the inital odds of each team winning by the `WEIGHT_FACTOR`.
+4) Creates a new match and adds it to `matches`.
 
 - **game: String** What game the match is, e.g. Valorent, Overwatch, etc.
 - **team_1: String** Name of the first team.
@@ -121,34 +122,33 @@ Used to create a new match.
 - **in_odds_2: f64** Average external odds for team 2 to win.
 - **date: String** The date the match is taking place.
 
-
 ### end_betting
 
 Used to close betting on the match.
 
-**end_betting(&mut self, match_id: MatchID)**
+**end_betting(&mut self, match_id: &MatchID)**
 
 1) Checks that the `admin` is calling the method.
 2) Fetches the relevant match from `matches`.
 3) Checks that the match has the `match_state` `Future`
 4) Changes `match_state` to `Current`
 
-- **match_id: MatchID** The match ID of the match that betting is being ended for.
+- **match_id: &MatchID** The match ID of the match that betting is being ended for.
 
 ### finish_match
 
 Used when a match finishes.
 
-**finish_match(&mut self, match_id: MatchID)**
+**finish_match(&mut self, match_id: &MatchID, winner: Team)**
 
 1) Checks that the `admin` is calling the method.
 2) Fetches the relevant match from `matches`.
 3) Checks that the match has the `match_state` `Current`
 4) Changes `match_state` to `Finished`.
-5) Changes `winner`.
+5) Sets `winner`.
 
-- **match_id: MatchID** The match ID of the match that is finished.
-
+- **match_id: &MatchID** The match ID of the match that is finished.
+- **winner: Team** The team that won the game
 
 ### cancel_match
 
@@ -192,7 +192,7 @@ Initializes the contract.
 
 Fetches a vector of matches within a limit.
 
-**get_matches(&self, from_index: Option&lt;U64&gt;, limit: Option&lt;U64>) -> Vec&lt;DisplayMatch>**
+**get_matches(&self, from_index: &Option&lt;u32&gt;, limit: Option&lt;u32&gt;) -> Vec&lt;DisplayMatch&gt;**
 
 1) If `from_index` is `None` set to 0 and if `limit` is `None` then it is set to the length of `matches`.
 2) Iterate through `matches`.
@@ -200,8 +200,8 @@ Fetches a vector of matches within a limit.
 4) Add each `DisplayMatch` to a vector.
 5) Return the vector.
 
-- **from_index: Option&lt;U64>** Specifies the index at which the method will start iterating.
-- **limit: Option&lt;U64>** Specifies how many matches will be collected.
+- **from_index: &Option&lt;U64>** Specifies the index at which the method will start iterating.
+- **limit: &Option&lt;U64>** Specifies how many matches will be collected.
 
 Returns a vector of matches to display.
 
@@ -209,13 +209,13 @@ Returns a vector of matches to display.
 
 Fetches a single match.
 
-**get_match(&self, match_id: MatchID) -> DisplayMatch**
+**get_match(&self, match_id:& MatchID) -> DisplayMatch**
 
 1) Fetches the relevant match from `matches`.
 2) Converts from `Match` to `DisplayMatch` using `format_match`.
 3) Returns the match.
 
-- **match_id: MatchID** The match ID of the match to be fetched.
+- **match_id: &MatchID** The match ID of the match to be fetched.
 
 Returns a single instance of `DisplayMatch`.
 
@@ -223,16 +223,16 @@ Returns a single instance of `DisplayMatch`.
 
 Gets the amount in USDC the bettor would receive if they were to make a bet right now. 
 
-**get_potential_winnings(&self, match_id: MatchID, team: Team, bet_amount: U128) -> U128**
+**get_potential_winnings(&self, match_id: &MatchID, team: &Team, bet_amount: &U128) -> U128**
 
 1) Fetches the relevant match from `matches`.
 2) Checks which team they have picked.
 3) Gets the potential winnings via `determine_potential_winnings`.
 4) Return the potential winnings.
 
-- **match_id: MatchID** The match ID of the match the bettor would bet on.
-- **team: Team** The team that the bettor would bet on.
-- **bet_amount: U128** The amount in USDC the bettor would bet.
+- **match_id: &MatchID** The match ID of the match the bettor would bet on.
+- **team: &Team** The team that the bettor would bet on.
+- **bet_amount: &U128** The amount in USDC the bettor would bet.
 
 Returns the potential winnings.
 
@@ -240,7 +240,7 @@ Returns the potential winnings.
 
 Fetches a single bet.
 
-**get_bet(&self, match_id: MatchID, bet_id: BetID) -> Bet** 
+**get_bet(&self, match_id: &MatchID, bet_id: &BetID) -> Bet** 
 
 1) Fetches the relevant match from `matches`.
 2) Fetches the relevant bet from `bets`.
@@ -255,15 +255,16 @@ Returns a single instance of `Bet`.
 
 Fetches a vector of bet Ids and their associated match IDs within a limit for a single bettor.
 
-**get_users_bets(&self, bettor: AccountID, from_index: Option&lt;U64&gt;, limit: Option&lt;U64&gt;) -> Vec&lt;BetId, MatchId&gt;**
+**get_users_bets(&self, bettor: &AccountId, from_index: &Option&lt;u32&gt;, limit: Option&lt;u32&gt;) -> Vec&lt;(BetId, MatchId)&gt;**
 
 1) If `from_index` is `None` set to 0 and if `limit` is `None` then it is set to the number of bets for the bettor.
 2) Iterate through the map of bet IDs.
 3) For each `BetId` add `BetId` and `MatchId` to a vector.
 4) Return the vector.
 
-- **from_index: Option&lt;U64&gt;** Specifies the index at which the method will start iterating.
-- **limit: Option&lt;U64&gt;** Specifies how many bet IDs will be fetched.
+- **bettor: AccountId** Account ID of the bettor for which bet Ids will be returned.
+- **from_index: &Option&lt;U64&gt;** Specifies the index at which the method will start iterating.
+- **limit: &Option&lt;U64&gt;** Specifies how many bet IDs will be fetched.
 
 Returns a vector of BetIds and their associated match IDs.
 
@@ -271,7 +272,7 @@ Returns a vector of BetIds and their associated match IDs.
 
 Fetches the admin of the contract.
 
-**get_admin(&self) -> AccountId**
+**get_admin(&self) -> &AccountId**
 
 1) Returns `admin`.
 
@@ -297,14 +298,13 @@ Returns a tuple of odds for team 1 and team 2.
 
 Calculates the potential winnings for a bet.
 
-**determine_potential_winnings(selected_team_total_bets: U128, other_team_total_bet: U128, bet_amount: U128) -> U128**
+**determine_potential_winnings(team: &Team, team_1_total_bets: &U128, team_2_total_bets: &U128, bet_amount: &U128,) -> U128**
 
-1) Calculates potential winnings for the given arguments.
-2) Returns the potential winnings.
+1) Checks which team they have selected.
+2) Calculates potential winnings for the given arguments.
+3) Returns the potential winnings.
 
-- **selected_team_total_bets: U128** Total bets on the selected team in USDC, this includes initial weightings.
-- **other_team_total_bets: U128** Total bets on the non-selected team in USDC, this includes initial weightings.
-- **bet_amount: U128** The bet amount in USDC for the bet.
+TODO
 
 Returns the potential winnings in USDC for a bet.
 
@@ -312,12 +312,15 @@ Returns the potential winnings in USDC for a bet.
 
 Reformats a match's details from `Match` to `DisplayMatch`. 
 
-**format_match(Match) -> DisplayMatch**
+**format_match(match_id, &MatchId, match_struct: &Match) -> DisplayMatch**
 
-1) Reformats from `Match` to `DisplayMatch`.
-2) Returns an instance of `DisplayMatch`.
+1) Get odds from `determine_approx_odds`.
+2) Reformats from `Match` to `DisplayMatch`.
+3) Returns an instance of `DisplayMatch`.
 
 Returns an instance of `DisplayMatch`.
+
+TODO
 
 ### assert_one_yocto
 

@@ -4,8 +4,6 @@ use near_sdk::{env, near, require, serde_json, Gas, NearToken};
 pub use crate::ext::*;
 use crate::*;
 
-const ONE_USDC: U128 = U128(1_000_000_000_000_000_000_000_000);
-
 #[near]
 impl Contract {
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
@@ -37,11 +35,22 @@ impl Contract {
             "Match state must be Future to bet on it"
         );
 
+        match team {
+            Team::Team1 => {
+                relevant_match.team_1_total_bets =
+                    U128(relevant_match.team_1_total_bets.0 + amount.0)
+            }
+            Team::Team2 => {
+                relevant_match.team_2_total_bets =
+                    U128(relevant_match.team_2_total_bets.0 + amount.0)
+            }
+        }
+
         // Insert bet ID into bets by user - creates a new map if there isn't one
         if self.bets_by_user.get(&sender_id).is_none() {
             let new_map: IterableMap<BetId, MatchId> = IterableMap::new(sender_id.as_bytes());
             self.bets_by_user.insert(sender_id.clone(), new_map);
-        }
+        };
 
         let bets_by_user = self.bets_by_user.get_mut(&sender_id).unwrap();
 
@@ -71,12 +80,12 @@ impl Contract {
         U128(0)
     }
 
-    pub fn claim_winnings(&mut self, match_id: MatchId, bet_id: BetId) -> U128 {
+    pub fn claim_winnings(&mut self, match_id: &MatchId, bet_id: &BetId) -> U128 {
         // Get relevant match
         let relevant_match = self
             .matches
-            .get_mut(&match_id)
-            .unwrap_or_else(|| panic!("No match exists with match id: {}", &match_id));
+            .get_mut(match_id)
+            .unwrap_or_else(|| panic!("No match exists with match id: {}", match_id));
 
         require!(
             matches!(relevant_match.match_state, MatchState::Finished),
@@ -86,8 +95,8 @@ impl Contract {
         // Get relevant bet
         let relevant_bet = relevant_match
             .bets
-            .get_mut(&bet_id)
-            .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", &bet_id));
+            .get_mut(bet_id)
+            .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", bet_id));
 
         require!(
             env::predecessor_account_id() == relevant_bet.bettor,
@@ -120,26 +129,23 @@ impl Contract {
         relevant_bet.potential_winnings
     }
 
-    pub fn claim_refund(&mut self, match_id: MatchId, bet_id: BetId) -> U128 {
+    pub fn claim_refund(&mut self, match_id: &MatchId, bet_id: &BetId) -> U128 {
         // Get relevant match
         let relevant_match = self
             .matches
-            .get_mut(&match_id)
-            .unwrap_or_else(|| panic!("No match exists with match id: {}", &match_id));
+            .get_mut(match_id)
+            .unwrap_or_else(|| panic!("No match exists with match id: {}", match_id));
 
         require!(
-            matches!(
-                relevant_match.match_state,
-                MatchState::Future | MatchState::Current
-            ),
-            "Match state must be Finished to claim winnings"
+            matches!(relevant_match.match_state, MatchState::Error),
+            "Match state must be in Error to claim refund"
         );
 
         // Find relevant bet
         let relevant_bet = relevant_match
             .bets
             .get_mut(&bet_id)
-            .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", &bet_id));
+            .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", bet_id));
 
         require!(
             env::predecessor_account_id() == relevant_bet.bettor,

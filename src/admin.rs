@@ -34,8 +34,8 @@ impl Contract {
         let divider = in_prob_1 + in_prob_2;
         let actual_prob_1 = in_prob_1 / divider;
         let actual_prob_2 = in_prob_2 / divider;
-        let team_1_total_bets = U128((actual_prob_1 * WEIGHT_FACTOR).round() as u128);
-        let team_2_total_bets = U128((actual_prob_2 * WEIGHT_FACTOR).round() as u128);
+        let team_1_total_bets = U128(ONE_USDC.0 * (actual_prob_1 * WEIGHT_FACTOR).round() as u128);
+        let team_2_total_bets = U128(ONE_USDC.0 * (actual_prob_2 * WEIGHT_FACTOR).round() as u128);
 
         let match_state = MatchState::Future;
         let winner: Option<Team> = None;
@@ -76,7 +76,7 @@ impl Contract {
         relevant_match.match_state = MatchState::Current;
     }
 
-    pub fn finish_match(&mut self, match_id: &MatchId) {
+    pub fn finish_match(&mut self, match_id: &MatchId, winner: Team) {
         require!(
             env::predecessor_account_id() == self.admin,
             "Only the admin can call this method"
@@ -93,6 +93,7 @@ impl Contract {
         );
 
         relevant_match.match_state = MatchState::Finished;
+        relevant_match.winner = Some(winner);
     }
 
     pub fn cancel_match(&mut self, match_id: &MatchId) {
