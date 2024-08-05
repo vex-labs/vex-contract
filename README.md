@@ -19,7 +19,7 @@ If you need any help with this please don't hesitate to ask for help.
 # Deployments
 
 - A stable contract (the last release) is deployed at "TBD".
-- An unstable development contract is deployed at meowwwww.testnet.
+- An unstable development contract is deployed at shocking-desire.testnet.
 
 # Flow
 
@@ -41,7 +41,7 @@ If you need any help with this please don't hesitate to ask for help.
 
 ### ft_on_transfer
 
-Used to place a bet on a match.
+Used to place a bet on a match. Callable via [ft_transfer_call](https://docs.near.org/build/primitives/ft#attaching-fts-to-a-call).
 
 **ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) U128** 
 
@@ -56,9 +56,8 @@ Used to place a bet on a match.
 9) Returns U128(0).   
 
 - **sender_id: AccountId** The account ID of the bettor.
-- **amount: U128** The bet amount in USDC.
-- **msg: String** Stores the other information needed to place a bet in JSON in the format of 
-`BetInfo`.
+- **amount: U128** The bet amount in USDC. One whole USDC is 10^24.
+- **msg: String** Stores the other information needed to place a bet in JSON in the format of `BetInfo`.
 
 Returns the leftover USDC from the call, which will always be zero.
 
@@ -232,7 +231,7 @@ Gets the amount in USDC the bettor would receive if they were to make a bet righ
 
 - **match_id: &MatchID** The match ID of the match the bettor would bet on.
 - **team: &Team** The team that the bettor would bet on.
-- **bet_amount: &U128** The amount in USDC the bettor would bet.
+- **bet_amount: &U128** The amount in USDC the bettor would bet. One USDC is 10^24.
 
 Returns the potential winnings.
 
@@ -304,7 +303,7 @@ Calculates the potential winnings for a bet.
 2) Calculates potential winnings for the given arguments.
 3) Returns the potential winnings.
 
-TODO
+TODO: params
 
 Returns the potential winnings in USDC for a bet.
 
@@ -318,9 +317,10 @@ Reformats a match's details from `Match` to `DisplayMatch`.
 2) Reformats from `Match` to `DisplayMatch`.
 3) Returns an instance of `DisplayMatch`.
 
-Returns an instance of `DisplayMatch`.
+- **match_id: &MatchId** The match ID of the match to be formatted.
+- **match_struct: &Match** The `Match` structure to be formatted.
 
-TODO
+Returns an instance of `DisplayMatch`.
 
 ### assert_one_yocto
 
@@ -436,4 +436,4 @@ Stores what state a match is in.
 - Currently, matches and their associated bets stay in the contract forever which uses a lot of storage. Consider deleting matches. Can we just index historical data instead?
 - get_matches currently fetches all types of matches, change to input the MatchStatus to get matches in certain statuses.
 - Do I need bets_by_user if I'm using an indexer?
-- Take a look at using U128 instead of f64 for odds, look how price oracles do it.
+- Take a look at using U128 instead of f64 for odds, look how price oracles do it, cause cause overflow / loss of precision, needs heavy testing.
