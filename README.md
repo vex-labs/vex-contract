@@ -430,10 +430,6 @@ Stores what state a match is in.
 
 # Uncertainties and considerations
 
-- If I am fetching a match will it fetch the list of bets and be high gas cost? Can I push a bet to matches without loading all the bets?
 - Is it better to have all the instances of Bet not stored in a Match and instead just list the bet IDs and Bets live independently of matches? I think it's best to have it nested (as it is right now) as when I am accessing a bet it will be related to a match unless it is a view method.
-- Check how much storage is being used to place a bet, there may need to be restrictions on this as people can just place a million bets and use all the storage in the contract. For now, set the minimum bet to 1 USDC.
-- Currently, matches and their associated bets stay in the contract forever which uses a lot of storage. Consider deleting matches. Can we just index historical data instead?
-- get_matches currently fetches all types of matches, change to input the MatchStatus to get matches in certain statuses.
+- get_matches currently fetches all types of matches, change to input the MatchStatus to get matches in certain statuses, maybe we just index this.
 - Do I need bets_by_user if I'm using an indexer?
-- Take a look at using U128 instead of f64 for odds, look how price oracles do it, cause cause overflow / loss of precision, needs heavy testing.
