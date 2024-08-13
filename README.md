@@ -50,10 +50,9 @@ Used to place a bet on a match. Callable via [ft_transfer_call](https://docs.nea
 3) Decerializes `msg`.
 4) Fetches the match with the specified match ID and checks `match_state` is `Future`.
 5) Adds bet amount to correct team's total bets
-6) Inserts the `BetId` and `MatchId` into `bets_by_user`. 
-7) Calculates `potential_winnings` using `determine_potential_winnings`.
-8) Inserts a new `Bet` into `bets` for the specified match with the correct bet details and reinserts the match.
-9) Returns U128(0).   
+6) Calculates `potential_winnings` using `determine_potential_winnings`.
+7) Inserts the a new `Bet` into into `bets_by_user`. 
+8) Returns U128(0).   
 
 - **sender_id: AccountId** The account ID of the bettor.
 - **amount: U128** The bet amount in USDC. One whole USDC is 10^24.
@@ -339,7 +338,7 @@ Checks that a user has deposited 1 YoctoNEAR in the current call.
 The entry structure for the contract.
 
 - **matches: IterableMap&lt;MatchId, Match&gt;** A map of matches yet to take place. 
-- **bets_by_user: LookupMap&lt;AccountId, IterableMap&lt;BetId, MatchId&gt;&gt;** A map that gives the bet IDs and the match ID of the match the bet was placed on.
+- **bets_by_user: LookupMap&lt;AccountId, IterableMap&lt;BetId, Bet&gt;&gt;** A map that gives the bet IDs and the match ID of the match the bet was placed on.
 - **last_bet_id: BetId** An integer that stores the bet ID of the last bet. Used for inputting what the next bet ID will be. 
 - **admin: AccountID** Sets the account ID of the account that can call admin methods. The oracle will be the admin.
 
@@ -357,19 +356,16 @@ Stores the necessary information for a match.
 - **team_2_inital_pool: U128** Initial weightings adding to team 2's pool from initial odds.
 - **match_state: MatchState** An enumeration dictating what state the match is in.
 - **winner: Option<Team>** An enumeration storing the winner of the match.
-- **bets: IterableMap&lt;BetID, Bet&gt;** A map of bets made on the match.
-
 
 ### Bet
 
 Stores the necessary information for a bet.
 
-- **bettor: AccountId** Account ID of the account making the bet.
+- **match_id: MatchId** Match ID of the match they bet on.
 - **team: Team** An enumeration storing the team they have bet on.
 - **bet_amount: U128** The amount in USDC they bet on the match.
-- **potential_winnings: U128** The amount the bettor will receive if they chose the correct team.
+- **potential_winnings: U128** The amount the bettor will receive if they choose the correct team.
 - **pay_state: Option&lt;PayState&gt;** An enumeration storing whether they have been paid out yet. If `None`, then either a winner is yet to be decided or the team they selected did not win.
-
 
 ### DisplayMatch
 
