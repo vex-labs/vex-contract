@@ -67,7 +67,6 @@ impl Contract {
         self.last_bet_id.0 += 1;
         let bet_id_string = self.last_bet_id.0.to_string();
 
-
         // Inserts the new bet, creates a new map if the user has not bet previously
         if self.bets_by_user.get(&sender_id).is_none() {
             let new_map: IterableMap<BetId, Bet> = IterableMap::new(bet_id_string.as_bytes());
@@ -82,7 +81,6 @@ impl Contract {
     }
 
     pub fn claim_winnings(&mut self, bet_id: &BetId) -> U128 {
-
         let bettor = env::predecessor_account_id();
 
         // Get relevant user
@@ -95,7 +93,7 @@ impl Contract {
         let relevant_bet = relevant_user
             .get_mut(bet_id)
             .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", bet_id));
-        
+
         require!(
             matches!(relevant_bet.pay_state, None),
             "You have already been paid out"
@@ -104,10 +102,12 @@ impl Contract {
         let match_id = &relevant_bet.match_id;
 
         // Get match state of the match in the bet
-        let relevant_match = self
-            .matches
-            .get(match_id)
-            .unwrap_or_else(|| panic!("No match exists with match id: {} there must have been an error", match_id));
+        let relevant_match = self.matches.get(match_id).unwrap_or_else(|| {
+            panic!(
+                "No match exists with match id: {} there must have been an error",
+                match_id
+            )
+        });
 
         require!(
             matches!(relevant_match.match_state, MatchState::Finished),
@@ -135,8 +135,7 @@ impl Contract {
         relevant_bet.potential_winnings
     }
 
-    pub fn claim_refund(&mut self, match_id: &MatchId, bet_id: &BetId) -> U128 {
-
+    pub fn claim_refund(&mut self, bet_id: &BetId) -> U128 {
         let bettor = env::predecessor_account_id();
 
         // Get relevant user
@@ -149,7 +148,7 @@ impl Contract {
         let relevant_bet = relevant_user
             .get_mut(bet_id)
             .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", bet_id));
-        
+
         require!(
             matches!(relevant_bet.pay_state, None),
             "You have already been paid out"
@@ -158,10 +157,12 @@ impl Contract {
         let match_id = &relevant_bet.match_id;
 
         // Get match state of the match in the bet
-        let relevant_match = self
-            .matches
-            .get(match_id)
-            .unwrap_or_else(|| panic!("No match exists with match id: {} there must have been an error", match_id));
+        let relevant_match = self.matches.get(match_id).unwrap_or_else(|| {
+            panic!(
+                "No match exists with match id: {} there must have been an error",
+                match_id
+            )
+        });
 
         require!(
             matches!(relevant_match.match_state, MatchState::Error),

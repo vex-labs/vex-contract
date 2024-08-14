@@ -2,47 +2,47 @@ This file contains a list of example commands to be run in near-cli-rs
 Remember to get cusd tokens on your own account
 
 Create account 
-cargo near create-dev-account use-specific-account-id shocking-desire.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create
+cargo near create-dev-account use-specific-account-id vexysexycontract.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create
 
 send ft to contract account to register
-near tokens pivortex.testnet send-ft cusd.fakes.testnet shocking-desire.testnet amount-ft '1 cUSD' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' network-config testnet sign-with-legacy-keychain send
+near tokens vexsharedaccount.testnet send-ft cusd.fakes.testnet vexysexycontract.testnet amount-ft '1 cUSD' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' network-config testnet sign-with-legacy-keychain send
 
 deploy and init
-cargo near deploy shocking-desire.testnet with-init-call init json-args '{"admin": "pivortex.testnet"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-legacy-keychain send
+cargo near deploy vexysexycontract.testnet with-init-call init json-args '{"admin": "vexsharedaccount.testnet"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-legacy-keychain send
 
 change_admin
-near contract call-function as-transaction shocking-desire.testnet change_admin json-args '{"new_admin": "icespice.testnet"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
+near contract call-function as-transaction vexysexycontract.testnet change_admin json-args '{"new_admin": "icespice.testnet"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
 
 get_admin
-near contract call-function as-read-only shocking-desire.testnet get_admin json-args {} network-config testnet now
+near contract call-function as-read-only vexysexycontract.testnet get_admin json-args {} network-config testnet now
 
 create_match
-near contract call-function as-transaction shocking-desire.testnet create_match json-args '{"game": "Overwatch", "team_1": "a team", "team_2": "b team", "in_odds_1": 1.4, "in_odds_2": 2.9, "date": "28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
+near contract call-function as-transaction vexysexycontract.testnet create_match json-args '{"game": "Overwatch", "team_1": "a team", "team_2": "b team", "in_odds_1": 1.4, "in_odds_2": 2.9, "date": "28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
 
 bet
-near contract call-function as-transaction cusd.fakes.testnet ft_transfer_call json-args '{"receiver_id": "shocking-desire.testnet", "amount": "1000000000000000000000000", "msg": "{\"match_id\": \"a team-b team-28/08/2024\", \"team\": \"Team1\"}"}' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
+near contract call-function as-transaction cusd.fakes.testnet ft_transfer_call json-args '{"receiver_id": "vexysexycontract.testnet", "amount": "1000000000000000000000000", "msg": "{\"match_id\": \"a team-b team-28/08/2024\", \"team\": \"Team1\"}"}' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
 
 get_match
-near contract call-function as-read-only shocking-desire.testnet get_match json-args '{"match_id": "a team-b team-28/08/2024"}' network-config testnet now
+near contract call-function as-read-only vexysexycontract.testnet get_match json-args '{"match_id": "a team-b team-28/08/2024"}' network-config testnet now
 
 get_matches
-near contract call-function as-read-only shocking-desire.testnet get_matches json-args '{"from_index": null, "limit": null}' network-config testnet now
+near contract call-function as-read-only vexysexycontract.testnet get_matches json-args '{"from_index": null, "limit": null}' network-config testnet now
 
 get_users_bets
-near contract call-function as-read-only shocking-desire.testnet get_users_bets json-args '{"bettor": "pivortex.testnet", "from_index": null, "limit": null}' network-config testnet now
+near contract call-function as-read-only vexysexycontract.testnet get_users_bets json-args '{"bettor": "vexsharedaccount.testnet", "from_index": null, "limit": null}' network-config testnet now
 
 get_bet 
-near contract call-function as-read-only shocking-desire.testnet get_bet json-args '{"match_id": "a team-b team-28/08/2024", "bet_id": "1"}' network-config testnet now
+near contract call-function as-read-only vexysexycontract.testnet get_bet json-args '{"bettor": "vexsharedaccount.testnet", "bet_id": "1"}' network-config testnet now
 
 get_potential_winnings
-near contract call-function as-read-only shocking-desire.testnet get_potential_winnings json-args '{"match_id": "a team-b team-28/08/2024", "team": "Team1", "bet_amount": "3928478932748332423"} ' network-config testnet now
+near contract call-function as-read-only vexysexycontract.testnet get_potential_winnings json-args '{"match_id": "a team-b team-28/08/2024", "team": "Team1", "bet_amount": "3928478932748332423"} ' network-config testnet now
 
 end_betting
-near contract call-function as-transaction shocking-desire.testnet end_betting json-args '{"match_id": "a team-b team-28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
+near contract call-function as-transaction vexysexycontract.testnet end_betting json-args '{"match_id": "a team-b team-28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
 
 finish_match 
-near contract call-function as-transaction shocking-desire.testnet finish_match json-args '{"match_id": "a team-b team-28/08/2024", "winner": "Team1"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
+near contract call-function as-transaction vexysexycontract.testnet finish_match json-args '{"match_id": "a team-b team-28/08/2024", "winner": "Team1"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
 
 claim_winnings
-near contract call-function as-transaction shocking-desire.testnet claim_winnings json-args '{"match_id": "a team-b team-28/08/2024", "bet_id": "1"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
+near contract call-function as-transaction vexysexycontract.testnet claim_winnings json-args '{"match_id": "a team-b team-28/08/2024", "bet_id": "1"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
 

@@ -19,7 +19,11 @@ If you need any help with this please don't hesitate to ask for help.
 # Deployments
 
 - A stable contract (the last release) is deployed at "TBD".
-- An unstable development contract is deployed at shocking-desire.testnet.
+- An unstable development contract is deployed at vexysexycontract.testnet.
+
+# Admin 
+
+- The admin is set to vexsharedaccount.testnet with private key ed25519:3qB3Gehv1iuEXqjHRLm36HmHC7ZCKaQJfxFQFirUVjaBSXiohv4as6NtSQJmi86SoNXDaC2QR8mKFcCd52JPzeCB 
 
 # Flow
 
@@ -47,12 +51,13 @@ Used to place a bet on a match. Callable via [ft_transfer_call](https://docs.nea
 
 1) Checks that the token is USDC.
 2) Checks they have bet one or more USDC.
-3) Decerializes `msg`.
+3) Parses `msg`.
 4) Fetches the match with the specified match ID and checks `match_state` is `Future`.
-5) Adds bet amount to correct team's total bets
+5) Adds bet amount to correct team's total bets.
 6) Calculates `potential_winnings` using `determine_potential_winnings`.
-7) Inserts the a new `Bet` into into `bets_by_user`. 
-8) Returns U128(0).   
+7) Increments `last_bet_id`.
+8) Inserts the a new `Bet` into into `bets_by_user`. 
+9) Returns U128(0).   
 
 - **sender_id: AccountId** The account ID of the bettor.
 - **amount: U128** The bet amount in USDC. One whole USDC is 10^24.
@@ -64,18 +69,16 @@ Returns the leftover USDC from the call, which will always be zero.
 
 Used by a bettor to claim bet winnings.
 
-**claim_winnings(&mut self, match_id: &MatchID, bet_id: &BetID) -> U128**
+**claim_winnings(&mut self, bet_id: &BetID) -> U128**
 
-1) Fetches the relevant bid from the relevant match.
-2) Checks that `match_state` is `Finished`.
-3) Checks that the predecessor is equal to `bettor`.
-4) Checks that `pay_state` is `None`.
-5) Checks that they selected the winning team.
-6) Transfers USDC equal to `potential_winnings` to the `bettor`.
-7) Changes `pay_state` to `Paid`.
-8) Returns `potential_winnings`.
+1) Fetches the relevant bet from `bets_by_user`.
+2) Checks that `pay_state` is `None`.
+3) Checks that `match_state` is `Finished`.
+4) Checks that they selected the winning team.
+5) Transfers USDC equal to `potential_winnings` to the `bettor`.
+6) Changes `pay_state` to `Paid`.
+7) Returns `potential_winnings`.
 
-- **match_id: &MatchID** The match ID of the match for which the bet was placed on.
 - **bet_id: &BetID** The bet ID of the bet the bettor is claiming their winnings for.
 
 Returns the amount in USDC that the bettor receives.
@@ -84,17 +87,16 @@ Returns the amount in USDC that the bettor receives.
 
 Used by a bettor to claim bet refunds when a match has an error or is canceled.
 
-**claim_refund(&mut self, match_id: &MatchID, bet_id: &BetID) -> U128**
+**claim_refund(&mut self, bet_id: &BetID) -> U128**
 
-1) Fetches the relevant bid from the relevant match.
-2) Checks that `match_state` is `Error`.
-3) Checks that the predecessor is equal to `bettor`.
-4) Checks that `pay_state` is `None`.
+1) Fetches the relevant bet from `bets_by_user`.
+2) Checks that `pay_state` is `None`.
+3) Checks that `match_state` is `Error`.
+4) Checks that they selected the winning team.
 5) Transfers USDC equal to `bet_amount` to the `bettor`.
 6) Changes `pay_state` to `RefundPaid`.
 7) Returns `bet_amount`.
 
-- **match_id: &MatchID** The match ID of the match for which the bet was placed on.
 - **bet_id: &BetID** The bet ID of the bet the bettor is claiming their refund for.
 
 Returns the amount in USDC that the bettor receives.
@@ -238,14 +240,14 @@ Returns the potential winnings.
 
 Fetches a single bet.
 
-**get_bet(&self, match_id: &MatchID, bet_id: &BetID) -> Bet** 
+**get_bet(&self, bettor: &AccountId, bet_id: &BetID) -> Bet** 
 
-1) Fetches the relevant match from `matches`.
-2) Fetches the relevant bet from `bets`.
+1) Fetches the relevant account from `bet_by_user`.
+2) Fetches the relevant bet.
 3) Returns the bet.
 
-- **match_id: MatchID** The match ID of the match where the bet was placed.
-- **bet_id: BetID** The bet ID of the bet to be fetched.
+- **bettor: &AccountId** Account ID of the bettor for which bet will be returned.
+- **bet_id: &BetID** The bet ID of the bet to be fetched.
 
 Returns a single instance of `Bet`.
 
@@ -256,15 +258,16 @@ Fetches a vector of bet Ids and their associated match IDs within a limit for a 
 **get_users_bets(&self, bettor: &AccountId, from_index: &Option&lt;u32&gt;, limit: Option&lt;u32&gt;) -> Vec&lt;(BetId, MatchId)&gt;**
 
 1) If `from_index` is `None` set to 0 and if `limit` is `None` then it is set to the number of bets for the bettor.
-2) Iterate through the map of bet IDs.
-3) For each `BetId` add `BetId` and `MatchId` to a vector.
+2) Fetches the relevant account from `bet_by_user`.
+2) Iterate through the map of bets.
+3) For each bet add `BetId` and `Bet` to a vector.
 4) Return the vector.
 
-- **bettor: AccountId** Account ID of the bettor for which bet Ids will be returned.
+- **bettor: &AccountId** Account ID of the bettor for which the bets will be returned.
 - **from_index: &Option&lt;U64&gt;** Specifies the index at which the method will start iterating.
 - **limit: &Option&lt;U64&gt;** Specifies how many bet IDs will be fetched.
 
-Returns a vector of BetIds and their associated match IDs.
+Returns a vector of BetIds and their Bet.
 
 ### get_admin 
 
@@ -302,7 +305,7 @@ Calculates the potential winnings for a bet.
 2) Calculates potential winnings for the given arguments.
 3) Returns the potential winnings.
 
-TODO: params
+TODO params
 
 Returns the potential winnings in USDC for a bet.
 
