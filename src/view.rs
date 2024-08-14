@@ -70,16 +70,15 @@ impl Contract {
         )
     }
 
-    pub fn get_bet(&self, match_id: &MatchId, bet_id: &BetId) -> &Bet {
-        // Get relevant match
-        let relevant_match = self
-            .matches
-            .get(match_id)
-            .unwrap_or_else(|| panic!("No match exists with match id: {}", match_id));
+    pub fn get_bet(&self, bettor: &AccountId, bet_id: &BetId) -> &Bet {
+        // Get relevant user
+        let relevant_user = self
+            .bets_by_user
+            .get(bettor)
+            .unwrap_or_else(|| panic!("No user exists with Account ID: {:?}", bettor));
 
         // Return relevant bet
-        relevant_match
-            .bets
+        relevant_user
             .get(bet_id)
             .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", bet_id))
     }
@@ -89,7 +88,7 @@ impl Contract {
         bettor: &AccountId,
         from_index: &Option<u32>,
         limit: &Option<u32>,
-    ) -> Vec<(BetId, MatchId)> {
+    ) -> Vec<(BetId, &Bet)> {
         // Get relevant user's bets
         let relevant_user_bets = self
             .bets_by_user
@@ -104,7 +103,7 @@ impl Contract {
             .iter()
             .skip(from as usize)
             .take(limit as usize)
-            .map(|(&key, value)| (key, value.clone()))
+            .map(|(&key, value)| (key, value))
             .collect()
     }
 }

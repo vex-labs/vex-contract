@@ -11,7 +11,7 @@ pub mod view;
 #[derive(PanicOnDefault)]
 pub struct Contract {
     matches: IterableMap<MatchId, Match>,
-    bets_by_user: LookupMap<AccountId, IterableMap<BetId, MatchId>>,
+    bets_by_user: LookupMap<AccountId, IterableMap<BetId, Bet>>,
     last_bet_id: BetId,
     admin: AccountId,
 }
@@ -27,12 +27,11 @@ pub struct Match {
     team_2_initial_pool: U128,
     match_state: MatchState,
     winner: Option<Team>,
-    bets: IterableMap<BetId, Bet>,
 }
 
 #[near(serializers = [json, borsh])]
 pub struct Bet {
-    bettor: AccountId,
+    match_id: MatchId,
     team: Team,
     bet_amount: U128,
     potential_winnings: U128,

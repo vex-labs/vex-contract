@@ -39,7 +39,6 @@ impl Contract {
 
         let match_state = MatchState::Future;
         let winner: Option<Team> = None;
-        let bets: IterableMap<BetId, Bet> = IterableMap::new(b"b");
 
         let new_match = Match {
             game,
@@ -51,7 +50,6 @@ impl Contract {
             team_2_initial_pool: team_2_total_bets,
             match_state,
             winner,
-            bets,
         };
 
         self.matches.insert(match_id, new_match);
