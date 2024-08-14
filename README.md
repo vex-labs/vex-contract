@@ -19,7 +19,7 @@ If you need any help with this please don't hesitate to ask for help.
 # Deployments
 
 - A stable contract (the last release) is deployed at "TBD".
-- An unstable development contract is deployed at vexysexycontract.testnet.
+- An unstable development contract is deployed at sexyvexycontract.testnet.
 
 # Admin 
 
