@@ -426,9 +426,3 @@ Stores what state a match is in.
 **WEIGHT_FACTOR: f64 = 1000.0** Sets the weight of the initial odds. If this is higher then the odds will change less on user bets, more so initially. 
 
 **USDC_CONTRACT_ID: &'static str = "cusd.fakes.testnet"** States the account ID of the USDC contract. 
-
-# Uncertainties and considerations
-
-- Is it better to have all the instances of Bet not stored in a Match and instead just list the bet IDs and Bets live independently of matches? I think it's best to have it nested (as it is right now) as when I am accessing a bet it will be related to a match unless it is a view method.
-- get_matches currently fetches all types of matches, change to input the MatchStatus to get matches in certain statuses, maybe we just index this.
-- Do I need bets_by_user if I'm using an indexer?
