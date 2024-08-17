@@ -14,6 +14,7 @@ pub struct Contract {
     bets_by_user: LookupMap<AccountId, IterableMap<BetId, Bet>>,
     last_bet_id: BetId,
     admin: AccountId,
+    usdc_contract: AccountId,
 }
 
 #[near(serializers = [borsh])]
@@ -64,19 +65,19 @@ pub type MatchId = String;
 pub type BetId = U64;
 
 pub const WEIGHT_FACTOR: f64 = 1000.0;
-pub const USDC_CONTRACT_ID: &'static str = "cusd.fakes.testnet";
 const ONE_USDC: U128 = U128(1_000_000_000_000_000_000_000_000);
 
 #[near]
 impl Contract {
     #[init]
     #[private]
-    pub fn init(admin: AccountId) -> Self {
+    pub fn init(admin: AccountId, usdc_contract: AccountId) -> Self {
         Self {
             matches: IterableMap::new(b"m"),
             bets_by_user: LookupMap::new(b"u"),
             last_bet_id: U64(0),
             admin,
+            usdc_contract,
         }
     }
 }

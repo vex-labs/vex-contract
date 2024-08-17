@@ -8,7 +8,7 @@ use crate::*;
 impl Contract {
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
         require!(
-            env::predecessor_account_id() == USDC_CONTRACT_ID.parse::<AccountId>().unwrap(),
+            env::predecessor_account_id() == self.usdc_contract,
             "Bets can only be made in USDC"
         );
 
@@ -125,7 +125,7 @@ impl Contract {
         };
 
         // Transfer USDC of amount potential winnings to the bettor
-        ft_contract::ext(USDC_CONTRACT_ID.parse().unwrap())
+        ft_contract::ext(self.usdc_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
             .ft_transfer(bettor, relevant_bet.potential_winnings);
@@ -180,7 +180,7 @@ impl Contract {
         };
 
         // Transfer USDC of amount potential winnings to the bettor
-        ft_contract::ext(USDC_CONTRACT_ID.parse().unwrap())
+        ft_contract::ext(self.usdc_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
             .ft_transfer(bettor, relevant_bet.bet_amount);
