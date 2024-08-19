@@ -1,19 +1,18 @@
 // This file contains the setup for all tests
 
-use near_sdk::json_types::U128;
+use near_sdk::json_types::{U128, U64};
 use near_sdk::{AccountId, Gas, NearToken};
 use near_workspaces::error::Error;
-use near_workspaces::network::Sandbox;
 use near_workspaces::result::ExecutionFinalResult;
-use near_workspaces::{Account, Contract, Result, Worker};
+use near_workspaces::{Account, Contract, Result};
 use serde_json::json;
+use vex_contracts::Team;
 
 const FIFTY_NEAR: NearToken = NearToken::from_near(50);
 const FT_WASM_FILEPATH: &str = "./tests/fungible_token.wasm";
 pub const ONE_USDC: u128 = 1_000_000_000_000_000_000_000_000;
 
 pub struct TestSetup {
-    pub sandbox: Worker<Sandbox>,
     pub alice: Account,
     pub bob: Account,
     pub admin: Account,
@@ -94,7 +93,6 @@ impl TestSetup {
         assert!(init.is_success(), "Failed to initialize VEX contract");
 
         Ok(TestSetup {
-            sandbox,
             alice,
             bob,
             admin,
@@ -162,4 +160,65 @@ pub async fn ft_transfer_call(
         .await?;
 
     Ok(transfer)
+}
+
+pub async fn claim(
+    account: Account,
+    vex_contract_id: &AccountId,
+    bet_id: U64,
+) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
+    let claim = account
+        .call(vex_contract_id, "claim")
+        .args_json(serde_json::json!({"bet_id": bet_id}))
+        .gas(Gas::from_tgas(50))
+        .transact()
+        .await?;
+
+    Ok(claim)
+}
+
+pub async fn finish_match(
+    account: Account,
+    vex_contract_id: &AccountId,
+    match_id: &str,
+    winner: Team,
+) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
+    let finish_match = account
+        .call(vex_contract_id, "finish_match")
+        .args_json(serde_json::json!({"match_id": match_id, "winner": winner}))
+        .gas(Gas::from_tgas(50))
+        .transact()
+        .await?;
+
+    Ok(finish_match)
+}
+
+pub async fn end_betting(
+    account: Account,
+    vex_contract_id: &AccountId,
+    match_id: &str,
+) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
+    let end_betting = account
+        .call(vex_contract_id, "end_betting")
+        .args_json(serde_json::json!({"match_id": match_id}))
+        .gas(Gas::from_tgas(50))
+        .transact()
+        .await?;
+
+    Ok(end_betting)
+}
+
+pub async fn cancel_match(
+    account: Account,
+    vex_contract_id: &AccountId,
+    match_id: &str,
+) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
+    let cancel_match = account
+        .call(vex_contract_id, "cancel_match")
+        .args_json(serde_json::json!({"match_id": match_id}))
+        .gas(Gas::from_tgas(50))
+        .transact()
+        .await?;
+
+    Ok(cancel_match)
 }
