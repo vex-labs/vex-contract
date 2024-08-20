@@ -12,6 +12,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         admin,
         vex_contract,
         usdc_contract,
+        ..
     } = setup::TestSetup::new().await?;
 
     // Create a new match
@@ -21,7 +22,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         .transact()
         .await?;
 
-    assert!(create_match.is_success());
+    assert!(create_match.is_success(), "Admin failed to create a match");
 
     // Alice places a bet of 10 USDC on the winning team
     let mut alice_bet = ft_transfer_call(
@@ -43,6 +44,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     let mut bet = vex_contract.view("get_bet").args_json(serde_json::json!({"bettor": alice.id(), "bet_id": U64(1)})).await;
     assert!(bet.is_ok(), "Failed to get Alice's bet");
 
+    // TODO Check odds
+
     // Bob places a bet of 5 USDC on the losing team
     let mut bob_bet = ft_transfer_call(
         bob.clone(),
@@ -63,6 +66,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     bet = vex_contract.view("get_bet").args_json(serde_json::json!({"bettor": bob.id(), "bet_id": U64(2)})).await;
     assert!(bet.is_ok(), "Failed to get Bob's first bet");
     
+    // TODO Check odds
+
     // Bob places a bet of 2 USDC on the winning team
     bob_bet = ft_transfer_call(
         bob.clone(),
@@ -82,6 +87,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
 
     bet = vex_contract.view("get_bet").args_json(serde_json::json!({"bettor": bob.id(), "bet_id": U64(3)})).await;
     assert!(bet.is_ok(), "Failed to get Bob's second bet");
+
+    // TODO Check odds
 
     // Alice places a bet on an invalid match
     alice_bet = ft_transfer_call(
