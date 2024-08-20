@@ -4,7 +4,8 @@ use near_sdk::json_types::{U128, U64};
 use near_sdk::{AccountId, Gas, NearToken};
 use near_workspaces::error::Error;
 use near_workspaces::result::ExecutionFinalResult;
-use near_workspaces::{Account, Contract, Result};
+use near_workspaces::{Account, Contract, Result, Worker};
+use near_workspaces::network::Sandbox;
 use serde_json::json;
 use vex_contracts::Team;
 
@@ -18,6 +19,7 @@ pub struct TestSetup {
     pub admin: Account,
     pub vex_contract: Contract,
     pub usdc_contract: Contract,
+    pub sandbox: Worker<Sandbox>,
 }
 
 impl TestSetup {
@@ -45,8 +47,8 @@ impl TestSetup {
         let res = usdc_contract
             .call("new_default_meta")
             .args_json(serde_json::json!({
-            "owner_id": admin.id(),
-            "total_supply": U128(1_000_000_000 * ONE_USDC), // 1 billion USDC
+                "owner_id": admin.id(),
+                "total_supply": U128(1_000_000_000 * ONE_USDC), // 1 billion USDC
             }))
             .transact()
             .await?;
@@ -98,6 +100,7 @@ impl TestSetup {
             admin,
             vex_contract,
             usdc_contract,
+            sandbox,
         })
     }
 }
@@ -113,7 +116,7 @@ async fn create_account(root: &near_workspaces::Account, name: &str) -> Result<A
     Ok(subaccount)
 }
 
-async fn ft_transfer(
+pub async fn ft_transfer(
     root: &near_workspaces::Account,
     account: Account,
     usdc_contract: Contract,
@@ -221,4 +224,19 @@ pub async fn cancel_match(
         .await?;
 
     Ok(cancel_match)
+}
+
+pub async fn change_admin(
+    account: Account,
+    vex_contract_id: &AccountId,
+    new_admin: AccountId,
+) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
+    let change_admin = account
+        .call(vex_contract_id, "change_admin")
+        .args_json(serde_json::json!({"new_admin": new_admin}))
+        .gas(Gas::from_tgas(50))
+        .transact()
+        .await?;
+
+    Ok(change_admin)
 }

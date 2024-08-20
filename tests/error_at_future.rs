@@ -13,6 +13,7 @@ async fn test_error_at_future() -> Result<(), Box<dyn std::error::Error>> {
         admin,
         vex_contract,
         usdc_contract,
+        ..
     } = setup::TestSetup::new().await?;
 
     // Create a new match
@@ -22,7 +23,7 @@ async fn test_error_at_future() -> Result<(), Box<dyn std::error::Error>> {
     .transact()
     .await?;
 
-    assert!(create_match.is_success());
+    assert!(create_match.is_success(), "Admin failed to create a match");
 
     // Alice places a bet of 10 USDC on team 1
     let mut alice_bet = ft_transfer_call(
@@ -40,6 +41,9 @@ async fn test_error_at_future() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(vex_contract_balance, U128(110 * ONE_USDC), "Vex contract balance is not correct after Alice's first bet");
     let mut alice_balance: U128 = ft_balance_of(&usdc_contract, alice.id()).await?;
     assert_eq!(alice_balance, U128(90 * ONE_USDC), "Alice's balance is not correct after her first bet");
+
+    let mut bet = vex_contract.view("get_bet").args_json(serde_json::json!({"bettor": alice.id(), "bet_id": U64(1)})).await;
+    assert!(bet.is_ok(), "Failed to get Alice's bet");
 
     // Bob places a bet of 5 USDC on the losing team
     let bob_bet = ft_transfer_call(
@@ -59,7 +63,7 @@ async fn test_error_at_future() -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(bob_balance, U128(95 * ONE_USDC), "Bob's balance is not correct after his first bet");
 
     // Cancel match
-    let cancel_match_res = cancel_match(
+    let mut cancel_match_res = cancel_match(
         admin.clone(),
         vex_contract.id(),
         "RUBY-Nexus-17/08/2024",
@@ -67,6 +71,16 @@ async fn test_error_at_future() -> Result<(), Box<dyn std::error::Error>> {
     .await?;
 
     assert!(cancel_match_res.is_success(), "Failed to cancel match");
+
+    // Admin tries to cancel the cancelled match
+    let mut cancel_match_res = cancel_match(
+        admin.clone(),
+        vex_contract.id(),
+        "RUBY-Nexus-17/08/2024",
+    )
+    .await?;
+
+    assert!(cancel_match_res.is_failure(), "Managed to cancel the cancelled match");
 
     // Admin tries to end betting on the cancelled match
     let complete_betting = end_betting(
