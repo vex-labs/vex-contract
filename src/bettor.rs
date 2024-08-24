@@ -35,6 +35,16 @@ impl Contract {
             "Match state must be Future to bet on it"
         );
 
+
+        // Determines potential winnings
+        let potential_winnings = determine_potential_winnings(
+            &team,
+            &relevant_match.team_1_total_bets,
+            &relevant_match.team_2_total_bets,
+            &amount,
+        );
+
+        // Increment total bets for the team
         match team {
             Team::Team1 => {
                 relevant_match.team_1_total_bets =
@@ -45,14 +55,6 @@ impl Contract {
                     U128(relevant_match.team_2_total_bets.0 + amount.0)
             }
         }
-
-        // Determines potential winnings
-        let potential_winnings = determine_potential_winnings(
-            &team,
-            &relevant_match.team_1_total_bets,
-            &relevant_match.team_2_total_bets,
-            &amount,
-        );
 
         // Creates a new bet
         let new_bet = Bet {
