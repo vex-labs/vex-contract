@@ -1,11 +1,9 @@
 // This file contains the setup for all tests
-
 use near_sdk::json_types::{U128, U64};
 use near_sdk::{AccountId, Gas, NearToken};
 use near_workspaces::error::Error;
 use near_workspaces::result::ExecutionFinalResult;
-use near_workspaces::{Account, Contract, Result, Worker};
-use near_workspaces::network::Sandbox;
+use near_workspaces::{Account, Contract, Result};
 use serde_json::json;
 use vex_contracts::Team;
 
@@ -19,11 +17,10 @@ pub struct TestSetup {
     pub admin: Account,
     pub vex_contract: Contract,
     pub usdc_contract: Contract,
-    pub sandbox: Worker<Sandbox>,
 }
 
 impl TestSetup {
-    pub async fn new() -> Result<Self, Box<dyn std::error::Error>> {
+    pub async fn new(incorrect_ft: bool) -> Result<Self, Box<dyn std::error::Error>> {
         // Create sandbox
         let sandbox = near_workspaces::sandbox().await?;
 
@@ -35,8 +32,8 @@ impl TestSetup {
         let admin = create_account(&root, "admin").await?;
 
         // Deploy VEX contract
-        // let contract_wasm = near_workspaces::compile_project("./").await?;
-        let contract_wasm = std::fs::read("./target/wasm32-unknown-unknown/release/vex_contracts.wasm")?;
+        let contract_wasm = near_workspaces::compile_project("./").await?;
+        // let contract_wasm = std::fs::read("./target/wasm32-unknown-unknown/release/vex_contracts.wasm")?;
         let vex_contract = sandbox.dev_deploy(&contract_wasm).await?;
 
         // Deploy FT contract
@@ -84,10 +81,16 @@ impl TestSetup {
         }
 
         // Initialize VEX contract
+        let ft_contract_id = if incorrect_ft {
+            "incorrect_ft".parse::<AccountId>().unwrap()
+        } else {
+            usdc_contract.as_account().id().clone()
+        };
+
         let init: ExecutionFinalResult = vex_contract
             .call("init")
             .args_json(
-                json!({"admin": admin.id(), "usdc_contract": usdc_contract.as_account().id()}),
+                json!({"admin": admin.id(), "usdc_contract": ft_contract_id}),
             )
             .transact()
             .await?;
@@ -100,7 +103,6 @@ impl TestSetup {
             admin,
             vex_contract,
             usdc_contract,
-            sandbox,
         })
     }
 }
@@ -134,6 +136,7 @@ pub async fn ft_transfer(
     Ok(transfer)
 }
 
+#[allow(dead_code)]
 pub async fn ft_balance_of(
     usdc_contract: &Contract,
     account_id: &AccountId,
@@ -147,6 +150,7 @@ pub async fn ft_balance_of(
     Ok(result)
 }
 
+#[allow(dead_code)]
 pub async fn ft_transfer_call(
     account: Account,
     usdc_contract_id: &AccountId,
@@ -165,6 +169,7 @@ pub async fn ft_transfer_call(
     Ok(transfer)
 }
 
+#[allow(dead_code)]
 pub async fn claim(
     account: Account,
     vex_contract_id: &AccountId,
@@ -180,6 +185,7 @@ pub async fn claim(
     Ok(claim)
 }
 
+#[allow(dead_code)]
 pub async fn finish_match(
     account: Account,
     vex_contract_id: &AccountId,
@@ -196,6 +202,7 @@ pub async fn finish_match(
     Ok(finish_match)
 }
 
+#[allow(dead_code)]
 pub async fn end_betting(
     account: Account,
     vex_contract_id: &AccountId,
@@ -211,6 +218,7 @@ pub async fn end_betting(
     Ok(end_betting)
 }
 
+#[allow(dead_code)]
 pub async fn cancel_match(
     account: Account,
     vex_contract_id: &AccountId,
@@ -226,6 +234,7 @@ pub async fn cancel_match(
     Ok(cancel_match)
 }
 
+#[allow(dead_code)]
 pub async fn change_admin(
     account: Account,
     vex_contract_id: &AccountId,
