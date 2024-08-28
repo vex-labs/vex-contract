@@ -40,7 +40,3 @@ near contract call-function as-transaction sexyvexycontract.testnet end_betting 
 
 finish_match 
 near contract call-function as-transaction sexyvexycontract.testnet finish_match json-args '{"match_id": "a team-b team-28/08/2024", "winner": "Team1"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
-
-claim_winnings
-near contract call-function as-transaction sexyvexycontract.testnet claim_winnings json-args '{"match_id": "a team-b team-28/08/2024", "bet_id": "1"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
-
