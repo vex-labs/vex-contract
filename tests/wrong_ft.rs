@@ -35,14 +35,28 @@ async fn test_wrong_ft() -> Result<(), Box<dyn std::error::Error>> {
     )
     .await?;
 
-    assert!(result.is_success(), "ft_transfer_call failed on Alice's bet");
+    assert!(
+        result.is_success(),
+        "ft_transfer_call failed on Alice's bet"
+    );
 
     let mut balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
-    assert_eq!(balance, U128(100 * ONE_USDC), "Vex contract balance is not correct after Alice's first bet");
+    assert_eq!(
+        balance,
+        U128(100 * ONE_USDC),
+        "Vex contract balance is not correct after Alice's first bet"
+    );
     balance = ft_balance_of(&usdc_contract, alice.id()).await?;
-    assert_eq!(balance, U128(100 * ONE_USDC), "Alice's balance is not correct after her first bet");
+    assert_eq!(
+        balance,
+        U128(100 * ONE_USDC),
+        "Alice's balance is not correct after her first bet"
+    );
 
-    let bet = vex_contract.view("get_bet").args_json(serde_json::json!({"bettor": alice.id(), "bet_id": U64(1)})).await;
+    let bet = vex_contract
+        .view("get_bet")
+        .args_json(serde_json::json!({"bettor": alice.id(), "bet_id": U64(1)}))
+        .await;
     assert!(bet.is_err(), "Managed to get Alice's bet");
 
     Ok(())

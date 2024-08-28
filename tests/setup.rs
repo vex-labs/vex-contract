@@ -67,7 +67,10 @@ impl TestSetup {
                 .transact()
                 .await?;
 
-            assert!(register.is_success(), "Failed to register account in USDC FT contract");
+            assert!(
+                register.is_success(),
+                "Failed to register account in USDC FT contract"
+            );
 
             // Transfer 100 FTs to accounts
             let transfer = ft_transfer(
@@ -77,7 +80,10 @@ impl TestSetup {
                 U128(100 * ONE_USDC),
             )
             .await?;
-            assert!(transfer.is_success(), "Failed to transfer 100 FTs to account");
+            assert!(
+                transfer.is_success(),
+                "Failed to transfer 100 FTs to account"
+            );
         }
 
         // Initialize VEX contract
@@ -89,9 +95,7 @@ impl TestSetup {
 
         let init: ExecutionFinalResult = vex_contract
             .call("init")
-            .args_json(
-                json!({"admin": admin.id(), "usdc_contract": ft_contract_id}),
-            )
+            .args_json(json!({"admin": admin.id(), "usdc_contract": ft_contract_id}))
             .transact()
             .await?;
 

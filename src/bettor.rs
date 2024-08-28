@@ -35,7 +35,6 @@ impl Contract {
             "Match state must be Future to bet on it"
         );
 
-
         // Determines potential winnings
         let potential_winnings = determine_potential_winnings(
             &team,
@@ -111,9 +110,8 @@ impl Contract {
             )
         });
 
-        match relevant_match.match_state { 
+        match relevant_match.match_state {
             MatchState::Finished => {
-
                 // Checks they selected the winning team
                 if let Some(winner) = &relevant_match.winner {
                     require!(
@@ -126,24 +124,24 @@ impl Contract {
 
                 // Transfer USDC of amount potential winnings to the bettor
                 ft_contract::ext(self.usdc_contract.clone())
-                .with_attached_deposit(NearToken::from_yoctonear(1))
-                .with_static_gas(Gas::from_tgas(30))
-                .ft_transfer(bettor, relevant_bet.potential_winnings);
+                    .with_attached_deposit(NearToken::from_yoctonear(1))
+                    .with_static_gas(Gas::from_tgas(30))
+                    .ft_transfer(bettor, relevant_bet.potential_winnings);
 
                 relevant_bet.pay_state = Some(PayState::Paid);
 
-                return relevant_bet.potential_winnings
+                return relevant_bet.potential_winnings;
             }
             MatchState::Error => {
                 // Transfer USDC of amount potential winnings to the bettor
                 ft_contract::ext(self.usdc_contract.clone())
-                .with_attached_deposit(NearToken::from_yoctonear(1))
-                .with_static_gas(Gas::from_tgas(30))
-                .ft_transfer(bettor, relevant_bet.bet_amount);
+                    .with_attached_deposit(NearToken::from_yoctonear(1))
+                    .with_static_gas(Gas::from_tgas(30))
+                    .ft_transfer(bettor, relevant_bet.bet_amount);
 
                 relevant_bet.pay_state = Some(PayState::RefundPaid);
 
-                return relevant_bet.bet_amount
+                return relevant_bet.bet_amount;
             }
             _ => panic!("Match state must be Finished or Error to claim funds"),
         }

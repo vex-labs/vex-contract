@@ -31,32 +31,17 @@ async fn test_admin_methods() -> Result<(), Box<dyn std::error::Error>> {
     assert!(result.is_success(), "Admin failed to create a match");
 
     // Non admin tries to end betting
-    result = end_betting(
-        alice.clone(),
-        vex_contract.id(),
-        "RUBY-Nexus-17/08/2024",
-    )
-    .await?;
+    result = end_betting(alice.clone(), vex_contract.id(), "RUBY-Nexus-17/08/2024").await?;
 
     assert!(result.is_failure(), "Non admin was able to end betting");
 
     // Non admin tries to cancel match
-    result = cancel_match(
-        alice.clone(),
-        vex_contract.id(),
-        "RUBY-Nexus-17/08/2024",
-    )
-    .await?;
+    result = cancel_match(alice.clone(), vex_contract.id(), "RUBY-Nexus-17/08/2024").await?;
 
     assert!(result.is_failure(), "Non admin was able to cancel match");
 
     // Admin ends betting
-    result = end_betting(
-        admin.clone(),
-        vex_contract.id(),
-        "RUBY-Nexus-17/08/2024",
-    )
-    .await?;
+    result = end_betting(admin.clone(), vex_contract.id(), "RUBY-Nexus-17/08/2024").await?;
 
     assert!(result.is_success(), "Admin failed to end betting");
 
@@ -72,32 +57,17 @@ async fn test_admin_methods() -> Result<(), Box<dyn std::error::Error>> {
     assert!(result.is_failure(), "Non admin was able to finish match");
 
     // Non admin tries to cancel match
-    result = cancel_match(
-        alice.clone(),
-        vex_contract.id(),
-        "RUBY-Nexus-17/08/2024",
-    )
-    .await?;
+    result = cancel_match(alice.clone(), vex_contract.id(), "RUBY-Nexus-17/08/2024").await?;
 
     assert!(result.is_failure(), "Non admin was able to cancel match");
 
     // Non admin tries to change admin
-    result = change_admin(
-        alice.clone(),
-        vex_contract.id(),
-        alice.id().clone(),
-    )
-    .await?;
+    result = change_admin(alice.clone(), vex_contract.id(), alice.id().clone()).await?;
 
     assert!(result.is_failure(), "Non admin was able to change admin");
 
     // Admin changes admin
-    result = change_admin(
-        admin.clone(),
-        vex_contract.id(),
-        alice.id().clone(),
-    )
-    .await?;
+    result = change_admin(admin.clone(), vex_contract.id(), alice.id().clone()).await?;
 
     assert!(result.is_success(), "Admin failed to change admin");
 
