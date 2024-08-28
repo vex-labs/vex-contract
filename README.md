@@ -53,8 +53,8 @@ Used to place a bet on a match. Callable via [ft_transfer_call](https://docs.nea
 2) Checks they have bet one or more USDC.
 3) Parses `msg`.
 4) Fetches the match with the specified match ID and checks `match_state` is `Future`.
-5) Adds bet amount to correct team's total bets.
-6) Calculates `potential_winnings` using `determine_potential_winnings`.
+5) Calculates `potential_winnings` using `determine_potential_winnings`.
+6) Adds bet amount to correct team's total bets.
 7) Increments `last_bet_id`.
 8) Inserts the a new `Bet` into into `bets_by_user`. 
 9) Returns U128(0).   
