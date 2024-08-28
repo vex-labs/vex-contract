@@ -18,8 +18,7 @@ If you need any help with this please don't hesitate to ask for help.
 
 # Deployments
 
-- A stable contract (the last release) is deployed at "TBD".
-- An unstable development contract is deployed at sexyvexycontract.testnet.
+- A stable contract (the last release) is deployed at "sexyvexycontract.testnet".
 
 # Admin 
 
@@ -29,7 +28,7 @@ If you need any help with this please don't hesitate to ask for help.
 
 ## Betting flow 
 1) The bettor selects a match and calls `ft_transfer_call` on the USDC contract which calls `ft_on_transfer` on the betting contract.
-2) If the bet was successful or the match was canceled the bettor calls `claim`.
+2) If the bet was successful or the match was cancelled the bettor calls `claim`.
 
 ## Admin / Oracle flow
 
@@ -138,7 +137,7 @@ Used when a match finishes.
 
 ### cancel_match
 
-Used when there is an error with a match or the match is canceled.
+Used when there is an error with a match or the match is cancelled.
 
 **cancel_match(&mut self, match_id: MatchID)**
 
@@ -147,7 +146,7 @@ Used when there is an error with a match or the match is canceled.
 3) Checks whether the `match_state` is `Future` or `Current`.
 4) Changes the `match_state` to `Error`.
 
-- **match_id: MatchID** The match ID of the match that is being canceled.
+- **match_id: MatchID** The match ID of the match that is being cancelled.
 
 ### change_admin
 
@@ -402,7 +401,7 @@ Stores what state a match is in.
 - **Future** The match has not started yet. 
 - **Current** The match is taking place. 
 - **Finished** The match is finished. 
-- **Error** The match had an error or was canceled. 
+- **Error** The match had an error or was cancelled. 
 
 ## Type Aliases
 
@@ -415,3 +414,38 @@ Stores what state a match is in.
 **WEIGHT_FACTOR: f64 = 1000.0** Sets the weight of the initial odds. If this is higher then the odds will change less on user bets, more so initially. 
 
 **USDC_CONTRACT_ID: &'static str = "cusd.fakes.testnet"** States the account ID of the USDC contract. 
+
+# Tests 
+
+## Unit Tests
+
+None 
+
+## Sandbox Tests
+
+### test_usual_flow
+
+Tests that the usual flow of a match works as expected. 
+
+### test_error_at_future
+
+Tests the contract behaves as expected when the match is cancelled in the future stage.
+
+### test_error_at_current
+
+Tests the contract behaves as expected when the match is cancelled in the current stage.
+
+### test_admin_methods
+
+Tests that a non admin cannot call admin methods and that admin switches correctly.
+
+### test_wrong_ft
+
+Tests that the contract rejects tokens that are not USDC.
+
+### test_large_bid
+
+TODO
+
+Tests the contract behaves as expected for very large bets.
+
