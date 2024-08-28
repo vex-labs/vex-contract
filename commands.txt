@@ -8,8 +8,7 @@ send ft to contract account to register
 near tokens pivortex.testnet send-ft cusd.fakes.testnet sexyvexycontract.testnet amount-ft '1 cUSD' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' network-config testnet sign-with-legacy-keychain send
 
 deploy and init
-cargo near deploy sexyvexycontract.testnet with-init-call init json-args '{"admin": "vexsharedaccount.testnet"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-legacy-keychain send
-
+cargo near deploy sexyvexycontract.testnet with-init-call init json-args '{"admin": "vexsharedaccount.testnet", "usdc_contract": "cusd.fakes.testnet"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-legacy-keychain send
 
 get_admin
 near contract call-function as-read-only sexyvexycontract.testnet get_admin json-args {} network-config testnet now
