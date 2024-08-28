@@ -8,7 +8,7 @@ use crate::*;
 impl Contract {
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
         require!(
-            env::predecessor_account_id() == USDC_CONTRACT_ID.parse::<AccountId>().unwrap(),
+            env::predecessor_account_id() == self.usdc_contract,
             "Bets can only be made in USDC"
         );
 
@@ -35,6 +35,15 @@ impl Contract {
             "Match state must be Future to bet on it"
         );
 
+        // Determines potential winnings
+        let potential_winnings = determine_potential_winnings(
+            &team,
+            &relevant_match.team_1_total_bets,
+            &relevant_match.team_2_total_bets,
+            &amount,
+        );
+
+        // Increment total bets for the team
         match team {
             Team::Team1 => {
                 relevant_match.team_1_total_bets =
@@ -45,14 +54,6 @@ impl Contract {
                     U128(relevant_match.team_2_total_bets.0 + amount.0)
             }
         }
-
-        // Determines potential winnings
-        let potential_winnings = determine_potential_winnings(
-            &team,
-            &relevant_match.team_1_total_bets,
-            &relevant_match.team_2_total_bets,
-            &amount,
-        );
 
         // Creates a new bet
         let new_bet = Bet {
@@ -80,7 +81,7 @@ impl Contract {
         U128(0)
     }
 
-    pub fn claim_winnings(&mut self, bet_id: &BetId) -> U128 {
+    pub fn claim(&mut self, bet_id: &BetId) -> U128 {
         let bettor = env::predecessor_account_id();
 
         // Get relevant user
@@ -109,85 +110,41 @@ impl Contract {
             )
         });
 
-        require!(
-            matches!(relevant_match.match_state, MatchState::Finished),
-            "Match state must be Finished to claim winnings"
-        );
+        match relevant_match.match_state {
+            MatchState::Finished => {
+                // Checks they selected the winning team
+                if let Some(winner) = &relevant_match.winner {
+                    require!(
+                        &relevant_bet.team == winner,
+                        "You did not select the winning team"
+                    );
+                } else {
+                    panic!("There is an error")
+                };
 
-        // Checks they selected the winning team
-        if let Some(winner) = &relevant_match.winner {
-            require!(
-                &relevant_bet.team == winner,
-                "You did not select the winning team"
-            );
-        } else {
-            panic!("There is an error")
-        };
+                // Transfer USDC of amount potential winnings to the bettor
+                ft_contract::ext(self.usdc_contract.clone())
+                    .with_attached_deposit(NearToken::from_yoctonear(1))
+                    .with_static_gas(Gas::from_tgas(30))
+                    .ft_transfer(bettor, relevant_bet.potential_winnings);
 
-        // Transfer USDC of amount potential winnings to the bettor
-        ft_contract::ext(USDC_CONTRACT_ID.parse().unwrap())
-            .with_attached_deposit(NearToken::from_yoctonear(1))
-            .with_static_gas(Gas::from_tgas(30))
-            .ft_transfer(bettor, relevant_bet.potential_winnings);
+                relevant_bet.pay_state = Some(PayState::Paid);
 
-        relevant_bet.pay_state = Some(PayState::Paid);
+                return relevant_bet.potential_winnings;
+            }
+            MatchState::Error => {
+                // Transfer USDC of amount potential winnings to the bettor
+                ft_contract::ext(self.usdc_contract.clone())
+                    .with_attached_deposit(NearToken::from_yoctonear(1))
+                    .with_static_gas(Gas::from_tgas(30))
+                    .ft_transfer(bettor, relevant_bet.bet_amount);
 
-        relevant_bet.potential_winnings
-    }
+                relevant_bet.pay_state = Some(PayState::RefundPaid);
 
-    pub fn claim_refund(&mut self, bet_id: &BetId) -> U128 {
-        let bettor = env::predecessor_account_id();
-
-        // Get relevant user
-        let relevant_user = self
-            .bets_by_user
-            .get_mut(&bettor)
-            .unwrap_or_else(|| panic!("You have not made a bet"));
-
-        // Get relevant bet
-        let relevant_bet = relevant_user
-            .get_mut(bet_id)
-            .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", bet_id));
-
-        require!(
-            matches!(relevant_bet.pay_state, None),
-            "You have already been paid out"
-        );
-
-        let match_id = &relevant_bet.match_id;
-
-        // Get match state of the match in the bet
-        let relevant_match = self.matches.get(match_id).unwrap_or_else(|| {
-            panic!(
-                "No match exists with match id: {} there must have been an error",
-                match_id
-            )
-        });
-
-        require!(
-            matches!(relevant_match.match_state, MatchState::Error),
-            "Match state must be Finished to claim winnings"
-        );
-
-        // Checks they selected the winning team
-        if let Some(winner) = &relevant_match.winner {
-            require!(
-                &relevant_bet.team == winner,
-                "You did not select the winning team"
-            );
-        } else {
-            panic!("There is an error")
-        };
-
-        // Transfer USDC of amount potential winnings to the bettor
-        ft_contract::ext(USDC_CONTRACT_ID.parse().unwrap())
-            .with_attached_deposit(NearToken::from_yoctonear(1))
-            .with_static_gas(Gas::from_tgas(30))
-            .ft_transfer(bettor, relevant_bet.bet_amount);
-
-        relevant_bet.pay_state = Some(PayState::RefundPaid);
-
-        relevant_bet.bet_amount
+                return relevant_bet.bet_amount;
+            }
+            _ => panic!("Match state must be Finished or Error to claim funds"),
+        }
     }
 }
 

@@ -7,16 +7,16 @@ use crate::*;
 #[allow(dead_code)]
 #[near(serializers = [json])]
 pub struct DisplayMatch {
-    match_id: MatchId,
-    game: String,
-    team_1: String,
-    team_2: String,
-    team_1_odds: f64,
-    team_2_odds: f64,
-    team_1_real_bets: U128,
-    team_2_real_bets: U128,
-    match_state: MatchState,
-    winner: Option<Team>,
+    pub match_id: MatchId,
+    pub game: String,
+    pub team_1: String,
+    pub team_2: String,
+    pub team_1_odds: f64,
+    pub team_2_odds: f64,
+    pub team_1_real_bets: U128,
+    pub team_2_real_bets: U128,
+    pub match_state: MatchState,
+    pub winner: Option<Team>,
 }
 
 #[near]
@@ -115,7 +115,7 @@ fn format_match(match_id: &MatchId, match_struct: &Match) -> DisplayMatch {
     );
 
     DisplayMatch {
-        match_id: match_id.clone(), // Assuming there's a match_id field in Match
+        match_id: match_id.clone(),
         game: match_struct.game.clone(),
         team_1: match_struct.team_1.clone(),
         team_2: match_struct.team_2.clone(),
@@ -147,8 +147,8 @@ fn determine_approx_odds(team_1_total_bets: &U128, team_2_total_bets: &U128) -> 
     let implied_prob_2 = team_2_bets / divider;
 
     // Calculate odds
-    let team_1_odds = (100.0 / implied_prob_1).round() / 100.0;
-    let team_2_odds = (100.0 / implied_prob_2).round() / 100.0;
+    let team_1_odds = 1.0 / implied_prob_1;
+    let team_2_odds = 1.0 / implied_prob_2;
 
     (team_1_odds, team_2_odds)
 }

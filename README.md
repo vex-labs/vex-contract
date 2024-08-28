@@ -29,7 +29,7 @@ If you need any help with this please don't hesitate to ask for help.
 
 ## Betting flow 
 1) The bettor selects a match and calls `ft_transfer_call` on the USDC contract which calls `ft_on_transfer` on the betting contract.
-2) If the bet was successful the bettor calls `claim_winnings`, if the match was canceled the bettor calls `claim_refund`.
+2) If the bet was successful or the match was canceled the bettor calls `claim`.
 
 ## Admin / Oracle flow
 
@@ -53,8 +53,8 @@ Used to place a bet on a match. Callable via [ft_transfer_call](https://docs.nea
 2) Checks they have bet one or more USDC.
 3) Parses `msg`.
 4) Fetches the match with the specified match ID and checks `match_state` is `Future`.
-5) Adds bet amount to correct team's total bets.
-6) Calculates `potential_winnings` using `determine_potential_winnings`.
+5) Calculates `potential_winnings` using `determine_potential_winnings`.
+6) Adds bet amount to correct team's total bets.
 7) Increments `last_bet_id`.
 8) Inserts the a new `Bet` into into `bets_by_user`. 
 9) Returns U128(0).   
@@ -65,42 +65,28 @@ Used to place a bet on a match. Callable via [ft_transfer_call](https://docs.nea
 
 Returns the leftover USDC from the call, which will always be zero.
 
-### claim_winnings
+### claim
 
-Used by a bettor to claim bet winnings.
+Used by a bettor to claim bet winnings or refund.
 
 **claim_winnings(&mut self, bet_id: &BetID) -> U128**
 
 1) Fetches the relevant bet from `bets_by_user`.
 2) Checks that `pay_state` is `None`.
-3) Checks that `match_state` is `Finished`.
-4) Checks that they selected the winning team.
-5) Transfers USDC equal to `potential_winnings` to the `bettor`.
-6) Changes `pay_state` to `Paid`.
-7) Returns `potential_winnings`.
+3) Checks that `match_state` is `Finished` or `Error`.
+- If the match is `Finished`
+    1) Checks that they selected the winning team.
+    2) Transfers USDC equal to `potential_winnings` to the `bettor`.
+    3) Changes `pay_state` to `Paid`.
+    4) Returns `potential_winnings`.
+- If the match is `Error`
+    1) Transfers USDC equal to `bet_amount` to the `bettor`.
+    2) Changes `pay_state` to `RefundPaid`.
+    3) Returns `bet_amount`.
 
 - **bet_id: &BetID** The bet ID of the bet the bettor is claiming their winnings for.
 
 Returns the amount in USDC that the bettor receives.
-
-### claim_refund
-
-Used by a bettor to claim bet refunds when a match has an error or is canceled.
-
-**claim_refund(&mut self, bet_id: &BetID) -> U128**
-
-1) Fetches the relevant bet from `bets_by_user`.
-2) Checks that `pay_state` is `None`.
-3) Checks that `match_state` is `Error`.
-4) Checks that they selected the winning team.
-5) Transfers USDC equal to `bet_amount` to the `bettor`.
-6) Changes `pay_state` to `RefundPaid`.
-7) Returns `bet_amount`.
-
-- **bet_id: &BetID** The bet ID of the bet the bettor is claiming their refund for.
-
-Returns the amount in USDC that the bettor receives.
-
 
 ## Only Callable by Admin 
 
@@ -305,7 +291,10 @@ Calculates the potential winnings for a bet.
 2) Calculates potential winnings for the given arguments.
 3) Returns the potential winnings.
 
-TODO params
+- **team: &Team** The team the bettor has selected.
+- **team_1_total_bets: &U128** Total bets on team 1 in USDC, this includes initial weightings.
+- **team_2_total_bets: &U128** Total bets on team 2 in USDC, this includes initial weightings.
+- **bet_amount: &U128** The amount in USDC the bettor would bet. One USDC is 10^24.
 
 Returns the potential winnings in USDC for a bet.
 
