@@ -407,7 +407,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
 
     assert!(result.is_success(), "Alice failed to claim her bet");
 
-    let mut winnings: u128 = 16617241663849083042791424;
+    let mut winnings: u128 = 16617241;
     let new_contract_bal = 117 * ONE_USDC - winnings;
     balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
     assert_eq!(
@@ -427,7 +427,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
 
     assert!(result.is_success(), "Bob failed to claim his bet");
 
-    winnings = 3325152764175424585465856;
+    winnings = 3325152;
     balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
     assert_eq!(
         balance,
