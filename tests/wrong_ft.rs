@@ -3,8 +3,6 @@ use vex_contracts::Team;
 mod setup;
 use crate::setup::*;
 
-const FT_WASM_FILEPATH: &str = "./tests/fungible_token.wasm";
-
 #[tokio::test]
 
 async fn test_wrong_ft() -> Result<(), Box<dyn std::error::Error>> {
