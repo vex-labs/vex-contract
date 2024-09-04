@@ -9,7 +9,7 @@ use vex_contracts::Team;
 
 const FIFTY_NEAR: NearToken = NearToken::from_near(50);
 const FT_WASM_FILEPATH: &str = "./tests/fungible_token.wasm";
-pub const ONE_USDC: u128 = 1_000_000_000_000_000_000_000_000;
+pub const ONE_USDC: u128 = 1_000_000;
 
 pub struct TestSetup {
     pub alice: Account,

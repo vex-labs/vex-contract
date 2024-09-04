@@ -65,7 +65,7 @@ pub type MatchId = String;
 pub type BetId = U64;
 
 pub const WEIGHT_FACTOR: f64 = 1000.0;
-const ONE_USDC: U128 = U128(1_000_000_000_000_000_000_000_000); // Note that this will have to change if USDC decimals are not 24
+pub const ONE_USDC: U128 = U128(1_000_000); // Note that this will have to change if USDC decimals are not 6
 
 #[near]
 impl Contract {

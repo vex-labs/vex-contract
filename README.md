@@ -413,8 +413,6 @@ Stores what state a match is in.
 
 **WEIGHT_FACTOR: f64 = 1000.0** Sets the weight of the initial odds. If this is higher then the odds will change less on user bets, more so initially. 
 
-**USDC_CONTRACT_ID: &'static str = "cusd.fakes.testnet"** States the account ID of the USDC contract. 
-
 # Tests 
 
 ## Unit Tests
