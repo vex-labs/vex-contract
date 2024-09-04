@@ -5,10 +5,10 @@ Create account
 cargo near create-dev-account use-specific-account-id sexyvexycontract.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create
 
 send ft to contract account to register
-near tokens pivortex.testnet send-ft cusd.fakes.testnet sexyvexycontract.testnet amount-ft '1 cUSD' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' network-config testnet sign-with-legacy-keychain send
+near tokens pivortex.testnet send-ft usdc.betvex.testnet sexyvexycontract.testnet amount-ft '1 USDC' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' network-config testnet sign-with-legacy-keychain send
 
 deploy and init
-cargo near deploy sexyvexycontract.testnet with-init-call init json-args '{"admin": "vexsharedaccount.testnet", "usdc_contract": "cusd.fakes.testnet"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-legacy-keychain send
+cargo near deploy sexyvexycontract.testnet with-init-call init json-args '{"admin": "vexsharedaccount.testnet", "usdc_contract": "usdc.betvex.testnet"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-legacy-keychain send
 
 get_admin
 near contract call-function as-read-only sexyvexycontract.testnet get_admin json-args {} network-config testnet now
@@ -17,7 +17,7 @@ create_match
 near contract call-function as-transaction sexyvexycontract.testnet create_match json-args '{"game": "Overwatch", "team_1": "a team", "team_2": "b team", "in_odds_1": 1.4, "in_odds_2": 2.9, "date": "28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
 
 bet
-near contract call-function as-transaction cusd.fakes.testnet ft_transfer_call json-args '{"receiver_id": "sexyvexycontract.testnet", "amount": "1000000000000000000000000", "msg": "{\"match_id\": \"a team-b team-28/08/2024\", \"team\": \"Team1\"}"}' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
+near contract call-function as-transaction usdc.betvex.testnet ft_transfer_call json-args '{"receiver_id": "sexyvexycontract.testnet", "amount": "1000000", "msg": "{\"match_id\": \"a team-b team-28/08/2024\", \"team\": \"Team1\"}"}' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
 
 get_match
 near contract call-function as-read-only sexyvexycontract.testnet get_match json-args '{"match_id": "a team-b team-28/08/2024"}' network-config testnet now
