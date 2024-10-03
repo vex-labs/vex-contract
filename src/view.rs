@@ -1,7 +1,7 @@
 use near_sdk::json_types::U128;
 use near_sdk::near;
 
-use crate::bettor::determine_potential_winnings;
+use crate::ft_on_transfer::determine_potential_winnings;
 use crate::*;
 
 #[allow(dead_code)]
