@@ -6,6 +6,7 @@ pub mod admin;
 pub mod bettor;
 pub mod ext;
 pub mod view;
+pub mod ft_on_transfer;
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
