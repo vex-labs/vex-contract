@@ -1,5 +1,6 @@
-use near_sdk::{env, near, require};
+use near_sdk::{env, near, require, NearToken, Gas};
 
+pub use crate::ext::*;
 use crate::*;
 
 #[near]
@@ -39,6 +40,8 @@ impl Contract {
 
         let match_state = MatchState::Future;
         let winner: Option<Team> = None;
+        let team_1_potential_winnings = U128(0);
+        let team_2_potential_winnings = U128(0);
 
         let new_match = Match {
             game,
@@ -48,6 +51,8 @@ impl Contract {
             team_2_total_bets,
             team_1_initial_pool: team_1_total_bets,
             team_2_initial_pool: team_2_total_bets,
+            team_1_potential_winnings,
+            team_2_potential_winnings,
             match_state,
             winner,
         };
@@ -113,6 +118,48 @@ impl Contract {
             "Match state must be Future or Current to cancel the match"
         );
 
-        relevant_match.match_state = MatchState::Error;
+        relevant_match.match_state = MatchState::Error;       
+    }
+
+    pub fn take_from_fees_fund(&mut self, amount: U128, receiver: AccountId) -> U128 {
+        require!(
+            env::predecessor_account_id() == self.admin,
+            "Only the admin can call this method"
+        );
+
+        require!(
+            self.fees_fund >= amount,
+            "Not enough funds in the fees fund"
+        );
+
+        ft_contract::ext(self.usdc_contract.clone())
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .with_static_gas(Gas::from_tgas(30))
+            .ft_transfer(receiver, amount);
+
+        self.fees_fund = U128(self.fees_fund.0 - amount.0);
+
+        self.fees_fund
+    }
+
+    pub fn take_from_insurance_fund(&mut self, amount: U128, receiver: AccountId) -> U128 {
+        require!(
+            env::predecessor_account_id() == self.admin,
+            "Only the admin can call this method"
+        );
+
+        require!(
+            self.insurance_fund >= amount,
+            "Not enough funds in the insurance fund"
+        );
+
+        ft_contract::ext(self.usdc_contract.clone())
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .with_static_gas(Gas::from_tgas(30))
+            .ft_transfer(receiver, amount);
+
+        self.insurance_fund = U128(self.insurance_fund.0 - amount.0);
+
+        self.insurance_fund
     }
 }
