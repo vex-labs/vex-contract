@@ -1,35 +1,10 @@
 use near_sdk::{env, near, require, Gas, NearToken};
-use uint::construct_uint;
 
 pub use crate::ext::*;
 use crate::*;
 
-construct_uint! {
-    /// 256-bit unsigned integer.
-    pub struct U256(4);
-}
-
 #[near]
 impl Contract {
-    pub(crate) fn deposit(&mut self, sender_id: AccountId, amount: U128) {
-        require!(
-            env::predecessor_account_id() == self.vex_contract,
-            "Only VEX can be staked"
-        );
-
-        require!(
-            amount >= FIFTY_VEX,
-            "You must deposit at least 50 VEX"
-        );
-
-        let relevant_account = self
-            .users_stake
-            .entry(sender_id)
-            .or_insert_with(UserStake::default);
-
-        relevant_account.unstaked_balance = U128(relevant_account.unstaked_balance.0 + amount.0);
-    }
-
     pub fn stake(&mut self, amount: U128) {
         require!(amount.0 > 0, "Staking amount should be positive");
 
@@ -55,7 +30,8 @@ impl Contract {
             "Not enough unstaked balance to stake"
         );
 
-        relevant_account.unstaked_balance = U128(relevant_account.unstaked_balance.0 - charge_amount);
+        relevant_account.unstaked_balance =
+            U128(relevant_account.unstaked_balance.0 - charge_amount);
         relevant_account.stake_shares = U128(relevant_account.stake_shares.0 + num_shares);
         relevant_account.unstake_timestamp = U64(env::block_timestamp() + 604_800_000_000_000); // One week in advance
 
@@ -66,6 +42,18 @@ impl Contract {
 
         self.total_staked_balance = U128(self.total_staked_balance.0 + stake_amount);
         self.total_stake_shares = U128(self.total_stake_shares.0 + num_shares);
+    }
+
+    pub fn stake_all(&mut self) {
+        let account_id = env::predecessor_account_id();
+
+        let relevant_account = self
+            .users_stake
+            .get(&account_id)
+            .unwrap_or_else(|| panic!("You have to deposit before staking"));
+
+        let amount = relevant_account.unstaked_balance;
+        self.stake(amount);
     }
 
     pub fn unstake(&mut self, amount: U128) {
@@ -114,15 +102,29 @@ impl Contract {
             .unwrap_or_else(|| panic!("You do not have any stake"));
 
         relevant_account.stake_shares = U128(relevant_account.stake_shares.0 - num_shares);
-        relevant_account.unstaked_balance = U128(relevant_account.unstaked_balance.0 + receive_amount);
+        relevant_account.unstaked_balance =
+            U128(relevant_account.unstaked_balance.0 + receive_amount);
 
         // The staked amount that will be added to the total to guarantee the "stake" share price
         // doesnt decrease when unstaking because of rounding. The difference between `stake_amount` and `charge_amount` is paid
         // from the allocated STAKE_SHARE_PRICE_GUARANTEE_FUND.
-        let stake_amount = self.staked_amount_from_num_shares_rounded_up(num_shares);
+        let stake_amount = self.staked_amount_from_num_shares_rounded_down(num_shares);
 
         self.total_staked_balance = U128(self.total_staked_balance.0 - stake_amount);
         self.total_stake_shares = U128(self.total_stake_shares.0 - num_shares);
+    }
+
+    pub fn unstake_all(&mut self) {
+        let account_id = env::predecessor_account_id();
+
+        let relevant_account = self
+            .users_stake
+            .get(&account_id)
+            .unwrap_or_else(|| panic!("You do not have any stake"));
+
+        let amount =
+            self.staked_amount_from_num_shares_rounded_down(relevant_account.stake_shares.0);
+        self.unstake(U128(amount));
     }
 
     pub fn withdraw(&mut self, amount: U128) {
@@ -133,7 +135,7 @@ impl Contract {
         let mut relevant_account = self
             .users_stake
             .remove(&account_id)
-            .unwrap_or_else(|| panic!("You do not have any stake"));
+            .unwrap_or_else(|| panic!("You do not have any to withdraw"));
 
         require!(
             relevant_account.unstaked_balance >= amount,
@@ -143,7 +145,8 @@ impl Contract {
         relevant_account.unstaked_balance = U128(relevant_account.unstaked_balance.0 - amount.0);
 
         if relevant_account.unstaked_balance.0 > 0 || relevant_account.stake_shares.0 > 0 {
-            self.users_stake.insert(account_id.clone(), relevant_account);
+            self.users_stake
+                .insert(account_id.clone(), relevant_account);
         }
 
         ft_contract::ext(self.usdc_contract.clone())
@@ -152,63 +155,15 @@ impl Contract {
             .ft_transfer(account_id, amount);
     }
 
-    pub(crate) fn add_to_insurance_fund(&mut self, amount: U128) {
-        require!(
-            env::predecessor_account_id() == self.usdc_contract,
-            "Only USDC can be added"
-        );
+    pub fn withdraw_all(&mut self) {
+        let account_id = env::predecessor_account_id();
 
-        self.insurance_fund = U128(self.insurance_fund.0 + amount.0);
-    }
+        let relevant_account = self
+            .users_stake
+            .get(&account_id)
+            .unwrap_or_else(|| panic!("You do not have any to withdraw"));
 
-    pub(crate) fn num_shares_from_staked_amount_rounded_down(
-        &self,
-        amount: u128,
-    ) -> u128 {
-        require!(
-            self.total_staked_balance.0 > 0,
-            "The total staked balance can't be 0"
-        );
-
-        (U256::from(self.total_stake_shares.0) * U256::from(amount) / U256::from(self.total_staked_balance.0)).as_u128()
-    }
-
-    pub(crate) fn staked_amount_from_num_shares_rounded_down(
-        &self,
-        num_shares: u128,
-    ) -> u128 {
-        require!(
-            self.total_stake_shares.0 > 0,
-            "The total number of stake shares can't be 0"
-        );
-        (U256::from(self.total_staked_balance.0) * U256::from(num_shares) / U256::from(self.total_stake_shares.0)).as_u128()
-    }
-
-    pub(crate) fn staked_amount_from_num_shares_rounded_up(
-        &self,
-        num_shares: u128,
-    ) -> u128 {
-        require!(
-            self.total_stake_shares.0 > 0,
-            "The total number of stake shares can't be 0"
-        );
-        ((U256::from(self.total_staked_balance.0) * U256::from(num_shares)
-            + U256::from(self.total_stake_shares.0 - 1))
-            / U256::from(self.total_stake_shares.0))
-        .as_u128()
-    }
-
-    pub(crate) fn num_shares_from_staked_amount_rounded_up(
-        &self,
-        amount: u128,
-    ) -> u128 {
-        require!(
-            self.total_staked_balance.0 > 0,
-            "The total staked balance can't be 0"
-        );
-        ((U256::from(self.total_stake_shares.0) * U256::from(amount)
-            + U256::from(self.total_staked_balance.0 - 1))
-            / U256::from(self.total_staked_balance.0))
-        .as_u128()
+        let amount = relevant_account.unstaked_balance;
+        self.withdraw(amount);
     }
 }
