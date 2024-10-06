@@ -22,7 +22,6 @@ enum Action {
 #[near]
 impl Contract {
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
-
         // Send to relevant function based on msg
         match serde_json::from_str(&msg) {
             Ok(Action::Stake) => {

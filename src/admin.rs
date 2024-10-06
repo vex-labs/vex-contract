@@ -1,4 +1,4 @@
-use near_sdk::{env, near, require, NearToken, Gas};
+use near_sdk::{env, near, require, Gas, NearToken};
 
 pub use crate::ext::*;
 use crate::*;
@@ -118,7 +118,7 @@ impl Contract {
             "Match state must be Future or Current to cancel the match"
         );
 
-        relevant_match.match_state = MatchState::Error;       
+        relevant_match.match_state = MatchState::Error;
     }
 
     pub fn take_from_fees_fund(&mut self, amount: U128, receiver: AccountId) -> U128 {
