@@ -1,5 +1,5 @@
 use near_sdk::json_types::{U128, U64};
-use vex_contracts::view::DisplayMatch;
+use vex_contracts::betting::view_betting::DisplayMatch;
 use vex_contracts::Team;
 mod setup;
 use crate::setup::*;
