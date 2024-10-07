@@ -1,6 +1,7 @@
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::{IterableMap, LookupMap};
 use near_sdk::{near, AccountId, PanicOnDefault};
+use uint::construct_uint;
 
 pub mod admin;
 pub mod betting;
@@ -16,12 +17,14 @@ pub struct Contract {
     pub last_bet_id: BetId,
     pub admin: AccountId,
     pub usdc_contract: AccountId,
-    pub vex_contract: AccountId,
+    pub vex_token_contract: AccountId,
     pub fees_fund: U128,
     pub insurance_fund: U128,
     pub users_stake: LookupMap<AccountId, UserStake>,
     pub total_staked_balance: U128,
     pub total_stake_shares: U128,
+    pub treasury: AccountId,
+    pub pool_id: u64,
 }
 
 #[near(serializers = [borsh])]
@@ -87,6 +90,11 @@ impl Default for UserStake {
     }
 }
 
+construct_uint! {
+    /// 256-bit unsigned integer.
+    pub struct U256(4);
+}
+
 pub type MatchId = String;
 pub type BetId = U64;
 
@@ -100,7 +108,13 @@ pub const INITIAL_ACCOUNT_BALANCE: u128 = 50_000_000_000_000_000_000; // The con
 impl Contract {
     #[init]
     #[private]
-    pub fn init(admin: AccountId, usdc_contract: AccountId, vex_contract: AccountId) -> Self {
+    pub fn init(
+        admin: AccountId,
+        usdc_contract: AccountId,
+        vex_token_contract: AccountId,
+        treasury: AccountId,
+        pool_id: u64,
+    ) -> Self {
         let total_staked_balance = U128(INITIAL_ACCOUNT_BALANCE - STAKE_SHARE_PRICE_GUARANTEE_FUND);
 
         Self {
@@ -109,12 +123,14 @@ impl Contract {
             last_bet_id: U64(0),
             admin,
             usdc_contract,
-            vex_contract,
+            vex_token_contract,
             fees_fund: U128(0),
             insurance_fund: U128(0),
             users_stake: LookupMap::new(b"s"),
             total_staked_balance,
             total_stake_shares: total_staked_balance,
+            treasury,
+            pool_id,
         }
     }
 }
