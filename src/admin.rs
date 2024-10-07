@@ -96,7 +96,45 @@ impl Contract {
         );
 
         relevant_match.match_state = MatchState::Finished;
-        relevant_match.winner = Some(winner);
+        relevant_match.winner = Some(winner.clone());
+
+        let total_bets = relevant_match.team_1_total_bets.0 + relevant_match.team_2_total_bets.0
+            - relevant_match.team_1_initial_pool.0
+            - relevant_match.team_2_initial_pool.0;
+
+        let (difference, is_profit) = match winner {
+            Team::Team1 => {
+                if total_bets > relevant_match.team_1_potential_winnings.0 {
+                    (
+                        total_bets - relevant_match.team_1_potential_winnings.0,
+                        true,
+                    )
+                } else {
+                    (
+                        relevant_match.team_1_potential_winnings.0 - total_bets,
+                        false,
+                    )
+                }
+            }
+            Team::Team2 => {
+                if total_bets > relevant_match.team_2_potential_winnings.0 {
+                    (
+                        total_bets - relevant_match.team_2_potential_winnings.0,
+                        true,
+                    )
+                } else {
+                    (
+                        relevant_match.team_2_potential_winnings.0 - total_bets,
+                        false,
+                    )
+                }
+            }
+        };
+
+        match is_profit {
+            true => self.handle_profit(difference),
+            false => self.handle_loss(difference),
+        };
     }
 
     pub fn cancel_match(&mut self, match_id: &MatchId) {
@@ -162,4 +200,30 @@ impl Contract {
 
         self.insurance_fund
     }
+
+    pub(crate) fn handle_profit(&mut self, profit: u128) {
+        // Calculate how profit is distributed
+        let usdc_staking_rewards =
+            (U256::from(60) * U256::from(profit) / U256::from(100)).as_u128();
+        let treasury_rewards = (U256::from(30) * U256::from(profit) / U256::from(100)).as_u128();
+        let insurace_rewards = (U256::from(5) * U256::from(profit) / U256::from(100)).as_u128();
+        let fees_rewards = profit - usdc_staking_rewards - treasury_rewards - insurace_rewards;
+
+        // Increase fees and insurance funds
+        self.fees_fund = U128(self.fees_fund.0 + fees_rewards);
+        self.insurance_fund = U128(self.insurance_fund.0 + insurace_rewards);
+
+        // Send funds to treasury
+        ft_contract::ext(self.usdc_contract.clone())
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .with_static_gas(Gas::from_tgas(30))
+            .ft_transfer(self.treasury.clone(), U128(treasury_rewards));
+
+        ft_contract::ext(self.usdc_contract.clone())
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .with_static_gas(Gas::from_tgas(30))
+            .ft_transfer_call();
+    }
+
+    pub(crate) fn handle_loss(&mut self, loss: u128) {}
 }

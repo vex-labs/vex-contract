@@ -1,18 +1,12 @@
-use near_sdk::{env, near, require, Gas, NearToken};
-use uint::construct_uint;
+use near_sdk::{env, near, require};
 
 use crate::*;
-
-construct_uint! {
-    /// 256-bit unsigned integer.
-    pub struct U256(4);
-}
 
 #[near]
 impl Contract {
     pub(crate) fn deposit(&mut self, sender_id: AccountId, amount: U128) {
         require!(
-            env::predecessor_account_id() == self.vex_contract,
+            env::predecessor_account_id() == self.vex_token_contract,
             "Only VEX can be staked"
         );
 
