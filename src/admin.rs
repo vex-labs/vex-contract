@@ -104,6 +104,8 @@ impl Contract {
 
         let (difference, is_profit) = match winner {
             Team::Team1 => {
+                self.funds_to_payout =
+                    U128(self.funds_to_payout.0 + relevant_match.team_1_potential_winnings.0);
                 if total_bets > relevant_match.team_1_potential_winnings.0 {
                     (
                         total_bets - relevant_match.team_1_potential_winnings.0,
@@ -117,6 +119,8 @@ impl Contract {
                 }
             }
             Team::Team2 => {
+                self.funds_to_payout =
+                    U128(self.funds_to_payout.0 + relevant_match.team_2_potential_winnings.0);
                 if total_bets > relevant_match.team_2_potential_winnings.0 {
                     (
                         total_bets - relevant_match.team_2_potential_winnings.0,
@@ -219,10 +223,18 @@ impl Contract {
             .with_static_gas(Gas::from_tgas(30))
             .ft_transfer(self.treasury.clone(), U128(treasury_rewards));
 
-        ft_contract::ext(self.usdc_contract.clone())
-            .with_attached_deposit(NearToken::from_yoctonear(1))
-            .with_static_gas(Gas::from_tgas(30))
-            .ft_transfer_call();
+        // Peform stake swap so rewards are distributed at the timestamp of the
+        // match being added to the list so extra rewards are not distributed
+        // self.perform_stake_swap();
+
+        self.usdc_staking_rewards = U128(self.usdc_staking_rewards.0 + usdc_staking_rewards);
+
+        // Add to staking rewards queue
+        let match_stake_info = MatchStakeInfo {
+            staking_rewards: U128(usdc_staking_rewards),
+            stake_end_time: U64(env::block_timestamp() + ONE_MONTH),
+        };
+        self.staking_rewards_queue.push_back(match_stake_info);
     }
 
     pub(crate) fn handle_loss(&mut self, loss: u128) {}

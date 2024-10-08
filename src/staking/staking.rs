@@ -33,7 +33,7 @@ impl Contract {
         relevant_account.unstaked_balance =
             U128(relevant_account.unstaked_balance.0 - charge_amount);
         relevant_account.stake_shares = U128(relevant_account.stake_shares.0 + num_shares);
-        relevant_account.unstake_timestamp = U64(env::block_timestamp() + 604_800_000_000_000); // One week in advance
+        relevant_account.unstake_timestamp = U64(env::block_timestamp() + ONE_WEEK); // One week in advance
 
         // The staked amount that will be added to the total to guarantee the "stake" share price
         // doesnt decrease when staking because of rounding. The difference between `stake_amount` and `charge_amount` is paid
@@ -165,5 +165,49 @@ impl Contract {
 
         let amount = relevant_account.unstaked_balance;
         self.withdraw(amount);
+    }
+
+    pub fn perform_stake_swap(&mut self) {
+        self.last_stake_swap_timestamp = U64(env::block_timestamp());
+        if self.staking_rewards_queue.is_empty() {
+            return;
+        }
+
+        let time_passed = env::block_timestamp() - self.last_stake_swap_timestamp.0;
+
+        // Check if the first item in staking rewards queue has expired
+        // repeat until the first item in the queue has not expired
+        // if expired remove and calculate rewards
+        let mut finished_matches_rewards: u128 = 0;
+        while let Some(first) = self.staking_rewards_queue.front() {
+            if first.stake_end_time.0 < env::block_timestamp() {
+                let finished_match_time_passed =
+                    first.stake_end_time.0 - self.last_stake_swap_timestamp.0;
+
+                let passed_match_reward = (U256::from(finished_match_time_passed)
+                    * U256::from(first.staking_rewards.0)
+                    / U256::from(ONE_MONTH))
+                .as_u128();
+            
+                finished_matches_rewards += passed_match_reward;
+                self.usdc_staking_rewards =
+                    U128(self.usdc_staking_rewards.0 - first.staking_rewards.0);
+
+                self.staking_rewards_queue.pop_front();
+            } else {
+                break;
+            }
+        }
+
+        // Calculate the rewards for the matches that have not expired
+        let active_match_rewards = (U256::from(time_passed)
+            * U256::from(self.usdc_staking_rewards.0)
+            / U256::from(ONE_MONTH))
+        .as_u128();
+
+        let total_rewards_to_swap = finished_matches_rewards + active_match_rewards;
+
+        // Swap these via ref finance then add a callback to add the output to total vex
+        // WIP
     }
 }
