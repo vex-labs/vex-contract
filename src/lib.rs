@@ -179,8 +179,8 @@ pub struct MatchStakeInfo {
     pub stake_end_time: U64,
 }
 
+// Construct a 256-bit unsigned integer
 construct_uint! {
-    /// 256-bit unsigned integer.
     pub struct U256(4);
 }
 
@@ -194,10 +194,10 @@ pub type BetId = U64;
 pub const WEIGHT_FACTOR: f64 = 1000.0;
 
 // One USDC in its lowest denomination
-pub const ONE_USDC: U128 = U128(1_000_000); // Note that this will have to change if USDC decimals are not 6
+pub const ONE_USDC: u128 = 1_000_000; // Note that this will have to change if USDC decimals are not 6
 
 // Fifty VEX in its lowest denomination
-pub const FIFTY_VEX: U128 = U128(50_000_000_000_000_000_000); // Note that this will have to change if VEX decimals are not 18
+pub const FIFTY_VEX: u128 = 50_000_000_000_000_000_000; // Note that this will have to change if VEX decimals are not 18
 
 // Amount of VEX allocated for rounding errors
 pub const STAKE_SHARE_PRICE_GUARANTEE_FUND: u128 = 1_000_000_000_000_000;

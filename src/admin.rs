@@ -38,8 +38,8 @@ impl Contract {
         let divider = in_prob_1 + in_prob_2;
         let actual_prob_1 = in_prob_1 / divider;
         let actual_prob_2 = in_prob_2 / divider;
-        let team_1_total_bets = U128(ONE_USDC.0 * (actual_prob_1 * WEIGHT_FACTOR).round() as u128);
-        let team_2_total_bets = U128(ONE_USDC.0 * (actual_prob_2 * WEIGHT_FACTOR).round() as u128);
+        let team_1_total_bets = U128(ONE_USDC * (actual_prob_1 * WEIGHT_FACTOR).round() as u128);
+        let team_2_total_bets = U128(ONE_USDC * (actual_prob_2 * WEIGHT_FACTOR).round() as u128);
 
         let match_state = MatchState::Future;
         let winner: Option<Team> = None;
@@ -222,8 +222,7 @@ impl Contract {
     // Handles the case when a match finishes and there is a profit
     pub(crate) fn handle_profit(&mut self, profit: u128) {
         // Calculate how profit is distributed
-        let usdc_for_staking =
-            (U256::from(60) * U256::from(profit) / U256::from(100)).as_u128();
+        let usdc_for_staking = (U256::from(60) * U256::from(profit) / U256::from(100)).as_u128();
         let treasury_rewards = (U256::from(30) * U256::from(profit) / U256::from(100)).as_u128();
         let insurace_rewards = (U256::from(5) * U256::from(profit) / U256::from(100)).as_u128();
         let fees_rewards = profit - usdc_for_staking - treasury_rewards - insurace_rewards;

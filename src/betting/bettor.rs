@@ -6,6 +6,7 @@ use crate::*;
 
 #[near]
 impl Contract {
+    // Function to bet on a match with USDC
     pub(crate) fn bet(
         &mut self,
         sender_id: AccountId,
@@ -18,7 +19,7 @@ impl Contract {
             "Bets can only be made in USDC"
         );
 
-        require!(amount >= ONE_USDC, "You must bet at least one USDC");
+        require!(amount.0 >= ONE_USDC, "You must bet at least one USDC");
 
         // Get relevant match
         let relevant_match = self
@@ -79,6 +80,7 @@ impl Contract {
         bets_by_user.insert(self.last_bet_id, new_bet);
     }
 
+    // Function to claim winnings or refund
     pub fn claim(&mut self, bet_id: &BetId) -> U128 {
         let bettor = env::predecessor_account_id();
 
@@ -108,6 +110,7 @@ impl Contract {
             )
         });
 
+        // Different flow depending on whether win or refund
         match relevant_match.match_state {
             MatchState::Finished => {
                 // Checks they selected the winning team
@@ -120,23 +123,30 @@ impl Contract {
                     panic!("There is an error")
                 };
 
-                // Transfer USDC of amount potential winnings to the bettor
+                // Transfer USDC of amount potential_winnings to the bettor
                 ft_contract::ext(self.usdc_token_contract.clone())
                     .with_attached_deposit(NearToken::from_yoctonear(1))
                     .with_static_gas(Gas::from_tgas(30))
-                    .ft_transfer(bettor, relevant_bet.potential_winnings);
+                    .ft_transfer(bettor, relevant_bet.potential_winnings)
+                    .then(
+                        Self::ext(env::current_account_id())
+                            .balance_callback(, ),
+                    );
 
                 relevant_bet.pay_state = Some(PayState::Paid);
 
                 return relevant_bet.potential_winnings;
             }
             MatchState::Error => {
-                // Transfer USDC of amount potential winnings to the bettor
+                // Transfer USDC of amount bet_amount to the bettor
                 ft_contract::ext(self.usdc_token_contract.clone())
                     .with_attached_deposit(NearToken::from_yoctonear(1))
                     .with_static_gas(Gas::from_tgas(30))
-                    .ft_transfer(bettor, relevant_bet.bet_amount);
-
+                    .ft_transfer(bettor, relevant_bet.bet_amount)
+                    .then(
+                    Self::ext(env::current_account_id())
+                        .balance_callback(, ),
+                    );
                 relevant_bet.pay_state = Some(PayState::RefundPaid);
 
                 return relevant_bet.bet_amount;
@@ -144,8 +154,15 @@ impl Contract {
             _ => panic!("Match state must be Finished or Error to claim funds"),
         }
     }
+
+    #[private]
+    pub fn claim_callback(&mut self, bettor: AccountId, bet_id: BetId, prev_pay_state: PayState) {
+        // WIP - Implement callback
+
+    }
 }
 
+// Function to determine potential winnings
 pub fn determine_potential_winnings(
     team: &Team,
     team_1_total_bets: &U128,
