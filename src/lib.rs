@@ -13,24 +13,63 @@ pub mod staking;
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
-pub struct Contract {
-    pub matches: IterableMap<MatchId, Match>,
-    pub bets_by_user: LookupMap<AccountId, IterableMap<BetId, Bet>>,
-    pub last_bet_id: BetId,
+pub struct Contract {  
+    // Stores the admin account ID
     pub admin: AccountId,
-    pub usdc_contract: AccountId,
+
+    // Stores the USDC contract account ID
+    pub usdc_token_contract: AccountId,
+
+    // Stores the VEX token contract account ID
     pub vex_token_contract: AccountId,
-    pub fees_fund: U128,
-    pub insurance_fund: U128,
-    pub funds_to_payout: U128,
-    pub users_stake: LookupMap<AccountId, UserStake>,
-    pub total_staked_balance: U128,
-    pub total_stake_shares: U128,
+
+    // Stores the treasury account ID
     pub treasury: AccountId,
+
+    // Stores the account ID of the Ref Finance contract
+    pub ref_contract: AccountId,
+
+    // Stores the pool ID of the Ref Finance contract
     pub ref_pool_id: u64,
-    pub usdc_staking_rewards: U128,
+
+    // Stores all matches 
+    pub matches: IterableMap<MatchId, Match>,
+
+    // Stores bets made by a user 
+    pub bets_by_user: LookupMap<AccountId, IterableMap<BetId, Bet>>,
+
+    // Stores the last bet ID
+    pub last_bet_id: BetId,
+
+    // Stores the balances related to staking for each user
+    pub users_stake: LookupMap<AccountId, UserStake>,
+
+    // Stores matches that still have staking rewards to be distributed
     pub staking_rewards_queue: VecDeque<MatchStakeInfo>,
+
+    // Stores the timestamp of when the last stake swap occurred
     pub last_stake_swap_timestamp: U64,
+
+    // Stores the total unstaked balance
+    pub total_unstaked_balance: U128,
+
+    // Stores the total staked balance in VEX
+    pub total_staked_balance: U128,
+
+    // Stores the total number of VEX stake shares
+    pub total_stake_shares: U128,
+
+    // Stores the amount of USDC in the staking rewards fund
+    pub usdc_staking_rewards: U128,
+
+    // Stores the amount of USDC in the fees fund
+    pub fees_fund: U128,
+
+    // Stores the amount of USDC in the insurance fund
+    pub insurance_fund: U128,
+
+    // Stores the amount of USDC that needs to be paid out
+    pub funds_to_payout: U128,
 }
 
 #[near(serializers = [borsh])]
@@ -124,31 +163,34 @@ impl Contract {
     #[private]
     pub fn init(
         admin: AccountId,
-        usdc_contract: AccountId,
+        usdc_token_contract: AccountId,
         vex_token_contract: AccountId,
         treasury: AccountId,
+        ref_contract: AccountId,
         ref_pool_id: u64,
     ) -> Self {
         let total_staked_balance = U128(INITIAL_ACCOUNT_BALANCE - STAKE_SHARE_PRICE_GUARANTEE_FUND);
 
         Self {
+            admin,
+            usdc_token_contract,
+            vex_token_contract,
+            treasury,
+            ref_contract,
+            ref_pool_id,
             matches: IterableMap::new(b"m"),
             bets_by_user: LookupMap::new(b"u"),
             last_bet_id: U64(0),
-            admin,
-            usdc_contract,
-            vex_token_contract,
+            users_stake: LookupMap::new(b"s"),
+            staking_rewards_queue: VecDeque::new(),
+            last_stake_swap_timestamp: U64(0),
+            total_unstaked_balance: U128(0),
+            total_staked_balance,
+            total_stake_shares: total_staked_balance,
+            usdc_staking_rewards: U128(0),
             fees_fund: U128(0),
             insurance_fund: U128(0),
             funds_to_payout: U128(0),
-            users_stake: LookupMap::new(b"s"),
-            total_staked_balance,
-            total_stake_shares: total_staked_balance,
-            treasury,
-            ref_pool_id,
-            usdc_staking_rewards: U128(0),
-            staking_rewards_queue: VecDeque::new(),
-            last_stake_swap_timestamp: U64(0),
         }
     }
 }

@@ -7,8 +7,7 @@ struct RefInnerMsg {
     token_in: AccountId,
     token_out: AccountId,
     amount_in: U128,
-    amount_out: String,
-    min_amount_out: String,
+    min_amount_out: U128,
 }
 
 #[near(serializers = [json])]
@@ -17,35 +16,31 @@ struct RefSwapMsg {
     actions: Vec<RefInnerMsg>,
 }
 
-// fn create_ref_message(
-//     pool_id: u64,
-//     token_in: &str,
-//     token_out: &str,
-//     amount_in: &str,
-//     amount_out: &str,
-//     min_amount_out: &str,
-// ) -> String {
-//     // Create the RefInnerMsg instance
-//     let action = RefInnerMsg {
-//         pool_id,
-//         token_in: token_in.to_string(),
-//         token_out: token_out.to_string(),
-//         amount_in: amount_in.to_string(),
-//         amount_out: amount_out.to_string(),
-//         min_amount_out: min_amount_out.to_string(),
-//     };
+pub fn create_ref_message(
+    pool_id: u64,
+    token_in: AccountId,
+    token_out: AccountId,
+    amount_in: u128,
+    min_amount_out: u128,
+) -> String {
+    // Create the RefInnerMsg instance
+    let action = RefInnerMsg {
+        pool_id,
+        token_in,
+        token_out,
+        amount_in: U128(amount_in),
+        min_amount_out: U128(min_amount_out),
+    };
 
-//     // Create the RefSwapMsg instance with force set to 0
-//     let message = RefSwapMsg {
-//         force: 0,
-//         actions: vec![action],
-//     };
+    // Create the RefSwapMsg instance with force set to 0
+    let message = RefSwapMsg {
+        force: 0,
+        actions: vec![action],
+    };
 
-//     // Serialize the RefSwapMsg to JSON
-//     serde_json::to_string(&message).unwrap()
-// }
-
-// WIP
+    // Serialize the RefSwapMsg to JSON
+    serde_json::to_string(&message).unwrap()
+}
 
 // FT transfer interface
 #[allow(dead_code)]
@@ -56,7 +51,9 @@ trait FT {
     fn ft_transfer_call(
         &mut self,
         receiver_id: AccountId,
-        amount: String,
+        amount: U128,
         msg: String,
     ) -> PromiseOrValue<U128>;
+
+    fn ft_balance_of(&self, account_id: AccountId) -> U128;
 }

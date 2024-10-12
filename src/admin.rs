@@ -174,7 +174,7 @@ impl Contract {
             "Not enough funds in the fees fund"
         );
 
-        ft_contract::ext(self.usdc_contract.clone())
+        ft_contract::ext(self.usdc_token_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
             .ft_transfer(receiver, amount);
@@ -195,7 +195,7 @@ impl Contract {
             "Not enough funds in the insurance fund"
         );
 
-        ft_contract::ext(self.usdc_contract.clone())
+        ft_contract::ext(self.usdc_token_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
             .ft_transfer(receiver, amount);
@@ -218,14 +218,14 @@ impl Contract {
         self.insurance_fund = U128(self.insurance_fund.0 + insurace_rewards);
 
         // Send funds to treasury
-        ft_contract::ext(self.usdc_contract.clone())
+        ft_contract::ext(self.usdc_token_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
             .ft_transfer(self.treasury.clone(), U128(treasury_rewards));
 
         // Peform stake swap so rewards are distributed at the timestamp of the
         // match being added to the list so extra rewards are not distributed
-        // self.perform_stake_swap();
+        self.perform_stake_swap();
 
         self.usdc_staking_rewards = U128(self.usdc_staking_rewards.0 + usdc_staking_rewards);
 
@@ -237,5 +237,23 @@ impl Contract {
         self.staking_rewards_queue.push_back(match_stake_info);
     }
 
-    pub(crate) fn handle_loss(&mut self, loss: u128) {}
+    pub(crate) fn handle_loss(&mut self, loss: u128) {
+        if loss < self.insurance_fund.0 {
+            self.insurance_fund = U128(self.insurance_fund.0 - loss);
+            return
+        }
+
+        let difference = loss - self.insurance_fund.0;
+
+        // Cross contract call to check how much vex is needed to be sold to cover the difference + 10%
+        // the input amount can change between blocks so add this 10% buffer
+
+        // swap this amount of vex to usdc
+
+        // Check that the amount of returned usdc + insurance fund is enough to cover the loss 
+        // If not emit some log that we gotta add money to the contract (this should hopefully never happen), have a variable to keep track of amount owed
+        // add left over usdc to insurance fund
+
+
+    }
 }
