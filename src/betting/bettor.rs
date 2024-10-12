@@ -14,7 +14,7 @@ impl Contract {
         team: Team,
     ) {
         require!(
-            env::predecessor_account_id() == self.usdc_contract,
+            env::predecessor_account_id() == self.usdc_token_contract,
             "Bets can only be made in USDC"
         );
 
@@ -121,7 +121,7 @@ impl Contract {
                 };
 
                 // Transfer USDC of amount potential winnings to the bettor
-                ft_contract::ext(self.usdc_contract.clone())
+                ft_contract::ext(self.usdc_token_contract.clone())
                     .with_attached_deposit(NearToken::from_yoctonear(1))
                     .with_static_gas(Gas::from_tgas(30))
                     .ft_transfer(bettor, relevant_bet.potential_winnings);
@@ -132,7 +132,7 @@ impl Contract {
             }
             MatchState::Error => {
                 // Transfer USDC of amount potential winnings to the bettor
-                ft_contract::ext(self.usdc_contract.clone())
+                ft_contract::ext(self.usdc_token_contract.clone())
                     .with_attached_deposit(NearToken::from_yoctonear(1))
                     .with_static_gas(Gas::from_tgas(30))
                     .ft_transfer(bettor, relevant_bet.bet_amount);

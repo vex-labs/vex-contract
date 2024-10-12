@@ -18,11 +18,12 @@ impl Contract {
             .or_insert_with(UserStake::default);
 
         relevant_account.unstaked_balance = U128(relevant_account.unstaked_balance.0 + amount.0);
+        self.total_unstaked_balance = U128(self.total_unstaked_balance.0 + amount.0);
     }
 
     pub(crate) fn add_to_insurance_fund(&mut self, amount: U128) {
         require!(
-            env::predecessor_account_id() == self.usdc_contract,
+            env::predecessor_account_id() == self.usdc_token_contract,
             "Only USDC can be added"
         );
 

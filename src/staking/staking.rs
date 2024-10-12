@@ -1,4 +1,4 @@
-use near_sdk::{env, near, require, Gas, NearToken};
+use near_sdk::{env, near, require, Gas, NearToken, Promise};
 
 pub use crate::ext::*;
 use crate::*;
@@ -32,6 +32,7 @@ impl Contract {
 
         relevant_account.unstaked_balance =
             U128(relevant_account.unstaked_balance.0 - charge_amount);
+        self.total_unstaked_balance = U128(self.total_unstaked_balance.0 - charge_amount);
         relevant_account.stake_shares = U128(relevant_account.stake_shares.0 + num_shares);
         relevant_account.unstake_timestamp = U64(env::block_timestamp() + ONE_WEEK); // One week in advance
 
@@ -104,6 +105,7 @@ impl Contract {
         relevant_account.stake_shares = U128(relevant_account.stake_shares.0 - num_shares);
         relevant_account.unstaked_balance =
             U128(relevant_account.unstaked_balance.0 + receive_amount);
+        self.total_unstaked_balance = U128(self.total_unstaked_balance.0 + receive_amount);
 
         // The staked amount that will be added to the total to guarantee the "stake" share price
         // doesnt decrease when unstaking because of rounding. The difference between `stake_amount` and `charge_amount` is paid
@@ -143,13 +145,14 @@ impl Contract {
         );
 
         relevant_account.unstaked_balance = U128(relevant_account.unstaked_balance.0 - amount.0);
+        self.total_unstaked_balance = U128(self.total_unstaked_balance.0 - amount.0);
 
         if relevant_account.unstaked_balance.0 > 0 || relevant_account.stake_shares.0 > 0 {
             self.users_stake
                 .insert(account_id.clone(), relevant_account);
         }
 
-        ft_contract::ext(self.usdc_contract.clone())
+        ft_contract::ext(self.usdc_token_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
             .ft_transfer(account_id, amount);
@@ -179,6 +182,8 @@ impl Contract {
         // repeat until the first item in the queue has not expired
         // if expired remove and calculate rewards
         let mut finished_matches_rewards: u128 = 0;
+        let mut new_usdc_staking_rewards: u128 = self.usdc_staking_rewards.0;
+        let mut num_to_pop: u16 = 0;
         while let Some(first) = self.staking_rewards_queue.front() {
             if first.stake_end_time.0 < env::block_timestamp() {
                 let finished_match_time_passed =
@@ -190,10 +195,10 @@ impl Contract {
                 .as_u128();
             
                 finished_matches_rewards += passed_match_reward;
-                self.usdc_staking_rewards =
-                    U128(self.usdc_staking_rewards.0 - first.staking_rewards.0);
 
-                self.staking_rewards_queue.pop_front();
+                new_usdc_staking_rewards -= first.staking_rewards.0;
+                num_to_pop += 1;
+
             } else {
                 break;
             }
@@ -201,13 +206,50 @@ impl Contract {
 
         // Calculate the rewards for the matches that have not expired
         let active_match_rewards = (U256::from(time_passed)
-            * U256::from(self.usdc_staking_rewards.0)
+            * U256::from(new_usdc_staking_rewards)
             / U256::from(ONE_MONTH))
         .as_u128();
 
         let total_rewards_to_swap = finished_matches_rewards + active_match_rewards;
 
         // Swap these via ref finance then add a callback to add the output to total vex
-        // WIP
+        let msg = create_ref_message(
+            self.ref_pool_id,
+            self.usdc_token_contract.clone(),
+            self.vex_token_contract.clone(),
+            total_rewards_to_swap,
+            0,
+        );
+
+        ft_contract::ext(self.usdc_token_contract.clone())
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .with_static_gas(Gas::from_tgas(100))
+            .ft_transfer_call(self.ref_contract.clone(), U128(total_rewards_to_swap), msg)
+            .then(Self::ext(env::current_account_id()).perform_stake_swap_callback(new_usdc_staking_rewards, num_to_pop));
     }
+
+
+    #[private]
+    pub fn perform_stake_swap_callback(&mut self, new_usdc_staking_rewards: u128, num_to_pop: u16) {
+        // Callback returns the amount of inputted token not outputted so we don't use this result
+        ft_contract::ext("token.betvex.testnet".parse().unwrap())
+            .with_static_gas(Gas::from_tgas(30))
+            .ft_balance_of(env::current_account_id())
+            .then(Self::ext(env::current_account_id()).balance_callback(new_usdc_staking_rewards, num_to_pop));
+    }
+
+    #[private]
+    pub fn balance_callback(&mut self, #[callback_unwrap] balance: U128, new_usdc_staking_rewards: u128, num_to_pop: u16) {
+        // I do not like this solution
+        // Plus this we do not STAKE_SHARE_PRICE_GUARANTEE_FUND is not a constant really
+        self.total_staked_balance = U128(balance.0 - self.total_unstaked_balance.0 - STAKE_SHARE_PRICE_GUARANTEE_FUND);
+
+        self.usdc_staking_rewards = U128(new_usdc_staking_rewards);
+        // Remove the finished matches from the queue
+        for _ in 0..num_to_pop {
+            self.staking_rewards_queue.pop_front();
+        }
+    }
+
+
 }
