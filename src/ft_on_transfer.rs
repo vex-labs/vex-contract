@@ -34,7 +34,7 @@ impl Contract {
                 self.bet(sender_id, amount, bet_info.match_id, bet_info.team);
             }
 
-            // add option to fill up the difference 
+            // add option to fill up the difference
             Err(err) => {
                 panic!("Invalid call {}", err);
             }

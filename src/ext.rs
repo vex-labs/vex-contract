@@ -3,10 +3,19 @@ use near_sdk::{ext_contract, near, serde_json, AccountId, PromiseOrValue};
 
 #[near(serializers = [json])]
 struct RefInnerMsg {
+    // The pool ID for the swap
     pool_id: u64,
+
+    // The token to swap from
     token_in: AccountId,
+
+    // The token to swap to
     token_out: AccountId,
+
+    // The amount of token in being swapped
     amount_in: U128,
+
+    // The minimum amount of token out to receive (or the call will fail)
     min_amount_out: U128,
 }
 
@@ -16,6 +25,7 @@ struct RefSwapMsg {
     actions: Vec<RefInnerMsg>,
 }
 
+// Creates a RefSwapMsg JSON string
 pub fn create_ref_message(
     pool_id: u64,
     token_in: AccountId,
