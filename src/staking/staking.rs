@@ -49,8 +49,8 @@ impl Contract {
         self.total_stake_shares = U128(self.total_stake_shares.0 + num_shares);
     }
 
-    // Stake all VEX from the unstaked balance 
-    pub fn stake_all(&mut self) { 
+    // Stake all VEX from the unstaked balance
+    pub fn stake_all(&mut self) {
         let account_id = env::predecessor_account_id();
 
         let relevant_account = self
@@ -64,7 +64,7 @@ impl Contract {
     }
 
     // Unstake a given amount of VEX to their unstaked balance
-    pub fn unstake(&mut self, amount: U128) { 
+    pub fn unstake(&mut self, amount: U128) {
         require!(amount.0 > 0, "Unstaking amount should be positive");
 
         let account_id = env::predecessor_account_id();
@@ -142,7 +142,7 @@ impl Contract {
         self.unstake(U128(amount));
     }
 
-    // Withdraw a given amount of VEX to their account 
+    // Withdraw a given amount of VEX to their account
     pub fn withdraw(&mut self, amount: U128) {
         require!(amount.0 > 0, "Withdrawal amount should be positive");
 
@@ -159,11 +159,13 @@ impl Contract {
         );
 
         // The user must keep at least 50 VEX in their unstaked balance or staked
-        let staked_balance = self.staked_amount_from_num_shares_rounded_up(relevant_account.stake_shares.0);
-            require!(
-                relevant_account.unstaked_balance.0 + staked_balance - amount.0 >= 50 || amount.0 == relevant_account.unstaked_balance.0,
-                "You must keep at least 50 VEX staked or deposited or be withdrawing all"
-            );
+        let staked_balance =
+            self.staked_amount_from_num_shares_rounded_up(relevant_account.stake_shares.0);
+        require!(
+            relevant_account.unstaked_balance.0 + staked_balance - amount.0 >= 50
+                || amount.0 == relevant_account.unstaked_balance.0,
+            "You must keep at least 50 VEX staked or deposited or be withdrawing all"
+        );
 
         // Subtract the amount from the unstaked balance
         relevant_account.unstaked_balance = U128(relevant_account.unstaked_balance.0 - amount.0);
@@ -262,11 +264,14 @@ impl Contract {
             );
     }
 
+
+    // WIP improve callbacks
+
     // Callback after swapping USDC for VEX
     #[private]
     pub fn perform_stake_swap_callback(&mut self, new_usdc_staking_rewards: u128, num_to_pop: u16) {
         // Callback returns the amount of inputted token not outputted so we don't use this result
-        // Make a call to get the amount of VEX the contract has 
+        // Make a call to get the amount of VEX the contract has
         // callback to balance_callback
         ft_contract::ext("token.betvex.testnet".parse().unwrap())
             .with_static_gas(Gas::from_tgas(30))
@@ -292,7 +297,7 @@ impl Contract {
 
         // Set the new staking rewards since some matches have expired
         self.usdc_staking_rewards = U128(new_usdc_staking_rewards);
-        
+
         // Remove the finished matches from the queue
         for _ in 0..num_to_pop {
             self.staking_rewards_queue.pop_front();
