@@ -1,5 +1,5 @@
 use near_sdk::json_types::U128;
-use near_sdk::{env, near, require, Gas, NearToken};
+use near_sdk::{env, near, require, Gas, NearToken, PromiseError};
 
 pub use crate::ext::*;
 use crate::*;
@@ -81,7 +81,7 @@ impl Contract {
     }
 
     // Function to claim winnings or refund
-    pub fn claim(&mut self, bet_id: &BetId) -> U128 {
+    pub fn claim(&mut self, bet_id: BetId) {
         let bettor = env::predecessor_account_id();
 
         // Get relevant user
@@ -92,7 +92,7 @@ impl Contract {
 
         // Get relevant bet
         let relevant_bet = relevant_user
-            .get_mut(bet_id)
+            .get_mut(&bet_id)
             .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", bet_id));
 
         require!(
@@ -127,38 +127,50 @@ impl Contract {
                 ft_contract::ext(self.usdc_token_contract.clone())
                     .with_attached_deposit(NearToken::from_yoctonear(1))
                     .with_static_gas(Gas::from_tgas(30))
-                    .ft_transfer(bettor, relevant_bet.potential_winnings)
+                    .ft_transfer(bettor.clone(), relevant_bet.potential_winnings)
                     .then(
                         Self::ext(env::current_account_id())
-                            .balance_callback(, ),
+                            .claim_callback(bettor, bet_id),
                     );
 
                 relevant_bet.pay_state = Some(PayState::Paid);
 
-                return relevant_bet.potential_winnings;
             }
             MatchState::Error => {
                 // Transfer USDC of amount bet_amount to the bettor
                 ft_contract::ext(self.usdc_token_contract.clone())
                     .with_attached_deposit(NearToken::from_yoctonear(1))
                     .with_static_gas(Gas::from_tgas(30))
-                    .ft_transfer(bettor, relevant_bet.bet_amount)
+                    .ft_transfer(bettor.clone(), relevant_bet.bet_amount)
                     .then(
                     Self::ext(env::current_account_id())
-                        .balance_callback(, ),
+                        .claim_callback(bettor, bet_id),
                     );
                 relevant_bet.pay_state = Some(PayState::RefundPaid);
-
-                return relevant_bet.bet_amount;
             }
             _ => panic!("Match state must be Finished or Error to claim funds"),
         }
     }
 
     #[private]
-    pub fn claim_callback(&mut self, bettor: AccountId, bet_id: BetId, prev_pay_state: PayState) {
-        // WIP - Implement callback
+    pub fn claim_callback(&mut self, #[callback_result] call_result: Result<(), PromiseError>, bettor: AccountId, bet_id: BetId) -> String {
+        if call_result.is_err() {
+            // Get relevant user
+            let relevant_user = self
+                .bets_by_user
+                .get_mut(&bettor)
+                .unwrap_or_else(|| panic!("You have not made a bet"));
 
+            // Get relevant bet
+            let relevant_bet = relevant_user
+                .get_mut(&bet_id)
+                .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", bet_id));
+
+            relevant_bet.pay_state = None;
+
+            return "Failed transfer".to_string();
+        }
+        return "Successful transfer".to_string();
     }
 }
 

@@ -53,9 +53,6 @@ pub struct Contract {
     // The timestamp of when the last stake swap occurred
     pub last_stake_swap_timestamp: U64,
 
-    // The total unstaked VEX balance
-    pub total_unstaked_balance: U128,
-
     // The total staked balance in VEX
     pub total_staked_balance: U128,
 
@@ -70,6 +67,9 @@ pub struct Contract {
 
     // The total amount of USDC that needs to be paid out
     pub funds_to_payout: U128,
+
+    // Pause the contract from accepting deposits while staking swaps are being made
+    pub deposits_paused: bool,
 }
 
 #[near(serializers = [borsh])]
@@ -239,12 +239,12 @@ impl Contract {
             staking_rewards_queue: VecDeque::new(),
             usdc_staking_rewards: U128(0),
             last_stake_swap_timestamp: U64(0),
-            total_unstaked_balance: U128(0),
             total_staked_balance,
             total_stake_shares: total_staked_balance,
             fees_fund: U128(0),
             insurance_fund: U128(0),
             funds_to_payout: U128(0),
+            deposits_paused: false,
         }
     }
 }

@@ -31,7 +31,6 @@ impl Contract {
 
         // Update the user's unstaked_balance
         relevant_account.unstaked_balance = U128(relevant_account.unstaked_balance.0 + amount.0);
-        self.total_unstaked_balance = U128(self.total_unstaked_balance.0 + amount.0);
     }
 
     // Add USDC to the insurance fund
