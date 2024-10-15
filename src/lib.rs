@@ -69,7 +69,7 @@ pub struct Contract {
     pub funds_to_payout: U128,
 
     // Pause the contract from accepting deposits while staking swaps are being made
-    pub deposits_paused: bool,
+    pub vex_deposits_paused: bool,
 }
 
 #[near(serializers = [borsh])]
@@ -244,7 +244,7 @@ impl Contract {
             fees_fund: U128(0),
             insurance_fund: U128(0),
             funds_to_payout: U128(0),
-            deposits_paused: false,
+            vex_deposits_paused: false,
         }
     }
 }

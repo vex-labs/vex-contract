@@ -128,13 +128,9 @@ impl Contract {
                     .with_attached_deposit(NearToken::from_yoctonear(1))
                     .with_static_gas(Gas::from_tgas(30))
                     .ft_transfer(bettor.clone(), relevant_bet.potential_winnings)
-                    .then(
-                        Self::ext(env::current_account_id())
-                            .claim_callback(bettor, bet_id),
-                    );
+                    .then(Self::ext(env::current_account_id()).claim_callback(bettor, bet_id));
 
                 relevant_bet.pay_state = Some(PayState::Paid);
-
             }
             MatchState::Error => {
                 // Transfer USDC of amount bet_amount to the bettor
@@ -142,10 +138,7 @@ impl Contract {
                     .with_attached_deposit(NearToken::from_yoctonear(1))
                     .with_static_gas(Gas::from_tgas(30))
                     .ft_transfer(bettor.clone(), relevant_bet.bet_amount)
-                    .then(
-                    Self::ext(env::current_account_id())
-                        .claim_callback(bettor, bet_id),
-                    );
+                    .then(Self::ext(env::current_account_id()).claim_callback(bettor, bet_id));
                 relevant_bet.pay_state = Some(PayState::RefundPaid);
             }
             _ => panic!("Match state must be Finished or Error to claim funds"),
@@ -153,7 +146,12 @@ impl Contract {
     }
 
     #[private]
-    pub fn claim_callback(&mut self, #[callback_result] call_result: Result<(), PromiseError>, bettor: AccountId, bet_id: BetId) -> String {
+    pub fn claim_callback(
+        &mut self,
+        #[callback_result] call_result: Result<(), PromiseError>,
+        bettor: AccountId,
+        bet_id: BetId,
+    ) -> String {
         if call_result.is_err() {
             // Get relevant user
             let relevant_user = self
