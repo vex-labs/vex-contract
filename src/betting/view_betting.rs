@@ -4,7 +4,16 @@ use near_sdk::near;
 use crate::betting::bettor::determine_potential_winnings;
 use crate::*;
 
-#[allow(dead_code)]
+#[near(serializers = [json])]
+pub struct ContractInfo {
+    admin: AccountId,
+    usdc_token_contract: AccountId,
+    vex_token_contract: AccountId,
+    treasury: AccountId,
+    ref_contract: AccountId,
+    ref_pool_id: U64
+}
+
 #[near(serializers = [json])]
 pub struct DisplayMatch {
     pub match_id: MatchId,
@@ -21,9 +30,16 @@ pub struct DisplayMatch {
 
 #[near]
 impl Contract {
-    // Returns the admin of the contract
-    pub fn get_admin(&self) -> &AccountId {
-        &self.admin
+    // Get general contract info
+    pub fn get_contract_info(&self) -> ContractInfo {
+        ContractInfo {
+            admin: self.admin.clone(),
+            usdc_token_contract: self.usdc_token_contract.clone(),
+            vex_token_contract: self.vex_token_contract.clone(),
+            treasury: self.treasury.clone(),
+            ref_contract: self.ref_contract.clone(),
+            ref_pool_id: U64(self.ref_pool_id),
+        }
     }
 
     // Returns a list of matches wihtin a range
@@ -113,10 +129,15 @@ impl Contract {
             .map(|(&key, value)| (key, value))
             .collect()
     }
+
+    // Get funds to pay out to winners
+    pub fn get_funds_to_payout(&self) -> U128 {
+        self.funds_to_payout
+    }
 }
 
 // Helper function to format a match to be displayed
-fn format_match(match_id: &MatchId, match_struct: &Match) -> DisplayMatch {
+pub fn format_match(match_id: &MatchId, match_struct: &Match) -> DisplayMatch {
     let (team_1_odds, team_2_odds) = determine_approx_odds(
         &match_struct.team_1_total_bets,
         &match_struct.team_2_total_bets,
@@ -141,7 +162,7 @@ fn format_match(match_id: &MatchId, match_struct: &Match) -> DisplayMatch {
 }
 
 // Helper function to determine approximate odds, odds for an infitesimal bet
-fn determine_approx_odds(team_1_total_bets: &U128, team_2_total_bets: &U128) -> (f64, f64) {
+pub fn determine_approx_odds(team_1_total_bets: &U128, team_2_total_bets: &U128) -> (f64, f64) {
     let team_1_bets: f64 = team_1_total_bets.0 as f64;
     let team_2_bets: f64 = team_2_total_bets.0 as f64;
 

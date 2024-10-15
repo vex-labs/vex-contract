@@ -113,7 +113,6 @@ impl Contract {
         relevant_account.stake_shares = U128(relevant_account.stake_shares.0 - num_shares);
         relevant_account.unstaked_balance =
             U128(relevant_account.unstaked_balance.0 + receive_amount);
-        self.total_unstaked_balance = U128(self.total_unstaked_balance.0 + receive_amount);
 
         // The staked amount that will be added to the total to guarantee the "stake" share price
         // doesnt decrease when unstaking because of rounding. The difference between `stake_amount` and `charge_amount` is paid
@@ -250,17 +249,19 @@ impl Contract {
             0,
         );
 
-        self.deposits_paused = true;
+        self.vex_deposits_paused = true;
 
-        // Get VEX balance before swap 
+        // Get VEX balance before swap
         // callback to first_balance_callback
         ft_contract::ext("token.betvex.testnet".parse().unwrap())
             .with_static_gas(Gas::from_tgas(30))
             .ft_balance_of(env::current_account_id())
-            .then(
-                Self::ext(env::current_account_id())
-                    .first_balance_callback(new_usdc_staking_rewards, num_to_pop, total_rewards_to_swap, msg),
-            );
+            .then(Self::ext(env::current_account_id()).first_balance_callback(
+                new_usdc_staking_rewards,
+                num_to_pop,
+                total_rewards_to_swap,
+                msg,
+            ));
     }
 
     // Callback after getting the VEX balance before swap
@@ -285,7 +286,6 @@ impl Contract {
             );
     }
 
-
     // Callback after swapping USDC for VEX
     #[private]
     pub fn perform_stake_swap_callback(&mut self, new_usdc_staking_rewards: u128, num_to_pop: u16) {
@@ -309,8 +309,6 @@ impl Contract {
         new_usdc_staking_rewards: u128,
         num_to_pop: u16,
     ) {
-
-
         // Set the new staking rewards since some matches have expired
         self.usdc_staking_rewards = U128(new_usdc_staking_rewards);
 
