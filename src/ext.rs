@@ -1,62 +1,38 @@
 use near_sdk::json_types::U128;
-use near_sdk::{ext_contract, near, serde_json, AccountId, PromiseOrValue};
+use near_sdk::{ext_contract, near, AccountId, PromiseOrValue};
 
 #[near(serializers = [json])]
-struct RefInnerMsg {
-    // The pool ID for the swap
+pub struct Action {
     pool_id: u64,
-
-    // The token to swap from
     token_in: AccountId,
-
-    // The token to swap to
     token_out: AccountId,
-
-    // The amount of token in being swapped
     amount_in: U128,
-
-    // The minimum amount of token out to receive (or the call will fail)
     min_amount_out: U128,
 }
 
-#[near(serializers = [json])]
-struct RefSwapMsg {
-    force: u8,
-    actions: Vec<RefInnerMsg>,
-}
-
-// Creates a RefSwapMsg JSON string
-pub fn create_ref_message(
+pub fn create_swap_args(
     pool_id: u64,
     token_in: AccountId,
     token_out: AccountId,
-    amount_in: u128,
-    min_amount_out: u128,
-) -> String {
-    // Create the RefInnerMsg instance
-    let action = RefInnerMsg {
+    amount_in: U128,
+    min_amount_out: U128,
+) -> Vec<Action> {
+    let action = Action {
         pool_id,
         token_in,
         token_out,
-        amount_in: U128(amount_in),
-        min_amount_out: U128(min_amount_out),
+        amount_in: amount_in,
+        min_amount_out: min_amount_out,
     };
 
-    // Create the RefSwapMsg instance with force set to 0
-    let message = RefSwapMsg {
-        force: 0,
-        actions: vec![action],
-    };
-
-    // Serialize the RefSwapMsg to JSON
-    serde_json::to_string(&message).unwrap()
+    vec![action]
 }
 
 // FT transfer interface
 #[allow(dead_code)]
 #[ext_contract(ft_contract)]
 trait FT {
-    fn ft_transfer(&self, receiver_id: AccountId, amount: U128);
+    fn ft_transfer(&mut self, receiver_id: AccountId, amount: U128);
 
     fn ft_transfer_call(
         &mut self,
@@ -64,6 +40,12 @@ trait FT {
         amount: U128,
         msg: String,
     ) -> PromiseOrValue<U128>;
+}
 
-    fn ft_balance_of(&self, account_id: AccountId) -> U128;
+#[allow(dead_code)]
+#[ext_contract(ref_contract)]
+trait Ref {
+    fn swap(&mut self, actions: Vec<Action>) -> U128;
+
+    fn withdraw(&mut self, token_id: AccountId, amount: U128) -> U128;
 }

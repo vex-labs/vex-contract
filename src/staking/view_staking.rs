@@ -60,10 +60,5 @@ impl Contract {
     pub fn get_insurance_fund(&self) -> U128 {
         self.insurance_fund
     }
-
-    // Get VEX deposits paused status
-    pub fn get_vex_deposits_paused(&self) -> bool {
-        self.vex_deposits_paused
-    }
 }
 
