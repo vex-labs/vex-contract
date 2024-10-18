@@ -67,6 +67,9 @@ pub struct Contract {
 
     // The total amount of USDC that needs to be paid out
     pub funds_to_payout: U128,
+
+    // The amount of USDC that needs to be added to be added to the contract because an error occurred
+    pub funds_to_add: U128,
 }
 
 #[near(serializers = [borsh])]
@@ -241,6 +244,7 @@ impl Contract {
             fees_fund: U128(0),
             insurance_fund: U128(0),
             funds_to_payout: U128(0),
+            funds_to_add: U128(0),
         }
     }
 }

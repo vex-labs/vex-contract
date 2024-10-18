@@ -60,4 +60,9 @@ impl Contract {
     pub fn get_insurance_fund(&self) -> U128 {
         self.insurance_fund
     }
+
+    // Get amount of USDC that needs to be added to the contract
+    pub fn get_funds_to_add(&self) -> U128 {
+        self.funds_to_add
+    }
 }

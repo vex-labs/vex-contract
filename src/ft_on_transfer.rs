@@ -13,7 +13,7 @@ struct BetInfo {
 #[near(serializers = [json])]
 enum FtTransferAction {
     Stake,
-    AddToInsuranceFund,
+    AddUSDC,
     Bet(BetInfo),
 }
 
@@ -25,8 +25,8 @@ impl Contract {
             Ok(FtTransferAction::Stake) => {
                 self.deposit(sender_id, amount);
             }
-            Ok(FtTransferAction::AddToInsuranceFund) => {
-                self.add_to_insurance_fund(amount);
+            Ok(FtTransferAction::AddUSDC) => {
+                self.add_usdc(amount);
             }
             Ok(FtTransferAction::Bet(bet_info)) => {
                 self.bet(sender_id, amount, bet_info.match_id, bet_info.team);

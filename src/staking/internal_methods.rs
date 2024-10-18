@@ -33,14 +33,27 @@ impl Contract {
         relevant_account.unstaked_balance = U128(relevant_account.unstaked_balance.0 + amount.0);
     }
 
-    // Add USDC to the insurance fund
-    pub(crate) fn add_to_insurance_fund(&mut self, amount: U128) {
+    // Add USDC to the contract
+    pub(crate) fn add_usdc(&mut self, amount: U128) {
         require!(
             env::predecessor_account_id() == self.usdc_token_contract,
             "Only USDC can be added"
         );
 
-        self.insurance_fund = U128(self.insurance_fund.0 + amount.0);
+        // First check if USDC needs to be added to funds_to_add
+        // send the rest to the insurance fund
+        if self.funds_to_add != U128(0) {
+            if amount >= self.funds_to_add {
+                let left_over = amount.0 - self.funds_to_add.0;
+                self.funds_to_add = U128(0);
+                self.insurance_fund = U128(self.insurance_fund.0 + left_over);
+            } else {
+                self.funds_to_add = U128(self.funds_to_add.0 - amount.0);
+                return;
+            }
+        } else {
+            self.insurance_fund = U128(self.insurance_fund.0 + amount.0);
+        }
     }
 
     // Helper function to calculate the number of stake shares from a staked amount

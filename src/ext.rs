@@ -48,4 +48,12 @@ trait Ref {
     fn swap(&mut self, actions: Vec<Action>) -> U128;
 
     fn withdraw(&mut self, token_id: AccountId, amount: U128) -> U128;
+
+    fn get_return_by_output(
+        &self,
+        pool_id: u64,
+        token_in: AccountId,
+        amount_out: U128,
+        token_out: AccountId,
+    ) -> U128;
 }
