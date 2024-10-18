@@ -1,4 +1,4 @@
-use near_sdk::{env, near, require, Gas, NearToken, PromiseError};
+use near_sdk::{env, near, require, Gas, NearToken};
 
 pub use crate::ext::*;
 use crate::*;
