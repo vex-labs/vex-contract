@@ -82,6 +82,11 @@ impl Contract {
 
     // Function to claim winnings or refund
     pub fn claim(&mut self, bet_id: BetId) {
+        require!(
+            env::prepaid_gas() >= Gas::from_tgas(150),
+            "You need to attach 300 TGas"
+        );
+
         let bettor = env::predecessor_account_id();
 
         // Get relevant user
@@ -128,7 +133,11 @@ impl Contract {
                     .with_attached_deposit(NearToken::from_yoctonear(1))
                     .with_static_gas(Gas::from_tgas(30))
                     .ft_transfer(bettor.clone(), relevant_bet.potential_winnings)
-                    .then(Self::ext(env::current_account_id()).claim_callback(bettor, bet_id));
+                    .then(
+                        Self::ext(env::current_account_id())
+                            .with_static_gas(Gas::from_tgas(50))
+                            .claim_callback(bettor, bet_id),
+                    );
 
                 relevant_bet.pay_state = Some(PayState::Paid);
             }
@@ -138,7 +147,11 @@ impl Contract {
                     .with_attached_deposit(NearToken::from_yoctonear(1))
                     .with_static_gas(Gas::from_tgas(30))
                     .ft_transfer(bettor.clone(), relevant_bet.bet_amount)
-                    .then(Self::ext(env::current_account_id()).claim_callback(bettor, bet_id));
+                    .then(
+                        Self::ext(env::current_account_id())
+                            .with_static_gas(Gas::from_tgas(50))
+                            .claim_callback(bettor, bet_id),
+                    );
                 relevant_bet.pay_state = Some(PayState::RefundPaid);
             }
             _ => panic!("Match state must be Finished or Error to claim funds"),
