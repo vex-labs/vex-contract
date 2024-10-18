@@ -87,6 +87,11 @@ impl Contract {
     // When a match finishes
     pub fn finish_match(&mut self, match_id: &MatchId, winner: Team) {
         require!(
+            env::prepaid_gas() >= Gas::from_tgas(300),
+            "You need to attach 300 TGas"
+        );
+
+        require!(
             env::predecessor_account_id() == self.admin,
             "Only the admin can call this method"
         );
@@ -217,58 +222,5 @@ impl Contract {
 
         // Returns how much is left in the insurance fund
         self.insurance_fund
-    }
-
-    // Handles the case when a match finishes and there is a profit
-    pub(crate) fn handle_profit(&mut self, profit: u128) {
-        // Calculate how profit is distributed
-        let usdc_for_staking = (U256::from(60) * U256::from(profit) / U256::from(100)).as_u128();
-        let treasury_rewards = (U256::from(30) * U256::from(profit) / U256::from(100)).as_u128();
-        let insurace_rewards = (U256::from(5) * U256::from(profit) / U256::from(100)).as_u128();
-        let fees_rewards = profit - usdc_for_staking - treasury_rewards - insurace_rewards;
-
-        // Increase fees and insurance funds
-        self.fees_fund = U128(self.fees_fund.0 + fees_rewards);
-        self.insurance_fund = U128(self.insurance_fund.0 + insurace_rewards);
-
-        // Send funds to treasury
-        ft_contract::ext(self.usdc_token_contract.clone())
-            .with_attached_deposit(NearToken::from_yoctonear(1))
-            .with_static_gas(Gas::from_tgas(30))
-            .ft_transfer(self.treasury.clone(), U128(treasury_rewards));
-
-        // Peform stake swap so rewards are distributed at the timestamp of the
-        // match being added to the list so extra rewards are not distributed
-        self.perform_stake_swap();
-
-        self.usdc_staking_rewards = U128(self.usdc_staking_rewards.0 + usdc_for_staking);
-
-        // Add to staking rewards queue
-        let match_stake_info = MatchStakeInfo {
-            staking_rewards: U128(usdc_for_staking),
-            stake_end_time: U64(env::block_timestamp() + ONE_MONTH),
-        };
-        self.staking_rewards_queue.push_back(match_stake_info);
-    }
-
-    // Handles the case when a match finishes and there is a loss
-    pub(crate) fn handle_loss(&mut self, loss: u128) {
-        // If the loss can be covered by the insurance fund then do so
-        if loss < self.insurance_fund.0 {
-            self.insurance_fund = U128(self.insurance_fund.0 - loss);
-            return;
-        }
-
-        // Calculate how much more USDC is needed to cover the loss
-        let difference = loss - self.insurance_fund.0;
-
-        // Cross contract call to check how much vex is needed to be sold to cover the difference + 10%
-        // the input amount can change between blocks so add this 10% buffer
-
-        // swap this amount of vex to usdc
-
-        // Check that the amount of returned usdc + insurance fund is enough to cover the loss
-        // If not emit some log that we gotta add money to the contract (this should hopefully never happen), have a variable to keep track of amount owed
-        // add left over usdc to insurance fund
     }
 }

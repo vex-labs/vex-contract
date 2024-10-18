@@ -61,4 +61,3 @@ impl Contract {
         self.insurance_fund
     }
 }
-

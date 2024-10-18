@@ -11,7 +11,7 @@ pub struct ContractInfo {
     vex_token_contract: AccountId,
     treasury: AccountId,
     ref_contract: AccountId,
-    ref_pool_id: U64
+    ref_pool_id: U64,
 }
 
 #[near(serializers = [json])]

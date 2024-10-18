@@ -9,6 +9,7 @@ impl Contract {
     pub fn perform_stake_swap(&mut self) {
         require!(
             env::prepaid_gas() >= Gas::from_tgas(300),
+            "You need to attach 300 TGas"
         );
 
         // If the staking queue is empty then skip and update the last stake swap timestamp
@@ -54,26 +55,51 @@ impl Contract {
 
         let total_rewards_to_swap = finished_matches_rewards + active_match_rewards;
 
-        // Call to ref finance to deposit the USDC rewards 
+        require!(
+            total_rewards_to_swap > 100 * ONE_USDC,
+            "Rewards to swap must be greather than 100"
+        );
+
+        let caller = env::predecessor_account_id();
+
+        // Call to ref finance to deposit the USDC rewards
         // Callback to ref_deposit_callback
         // If this call fails we can call this function again
         // as no state was changed
         ft_contract::ext(self.usdc_token_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
-            .ft_transfer_call(self.ref_contract.clone(), U128(total_rewards_to_swap), "".to_string())
+            .ft_transfer_call(
+                self.ref_contract.clone(),
+                U128(total_rewards_to_swap),
+                "".to_string(),
+            )
             .then(
                 Self::ext(env::current_account_id())
-                .with_static_gas(Gas::from_tgas(250))
-                .ref_deposit_callback(num_to_pop, new_usdc_staking_rewards, time_passed) 
+                    .with_static_gas(Gas::from_tgas(250))
+                    .ref_deposit_callback(
+                        num_to_pop,
+                        new_usdc_staking_rewards,
+                        time_passed,
+                        caller,
+                    ),
             );
     }
 
     // Callback after the deposit to ref finance
     #[private]
-    pub fn ref_deposit_callback(&mut self, #[callback_result] call_result: Result<U128, PromiseError>, num_to_pop: u16, new_usdc_staking_rewards: u128, time_passed: u64) {
-        let amount_deposited = call_result.unwrap_or_else(|_| panic!("Deposit to ref finance failed, call peform_stake_swap again"));
-        
+    pub fn ref_deposit_callback(
+        &mut self,
+        #[callback_result] call_result: Result<U128, PromiseError>,
+        num_to_pop: u16,
+        new_usdc_staking_rewards: u128,
+        time_passed: u64,
+        caller: AccountId,
+    ) {
+        let amount_deposited = call_result.unwrap_or_else(|_| {
+            panic!("Deposit to ref finance failed, call peform_stake_swap again")
+        });
+
         // Set the new staking rewards since some matches have expired
         self.usdc_staking_rewards = U128(new_usdc_staking_rewards);
 
@@ -103,16 +129,20 @@ impl Contract {
             .swap(action)
             .then(
                 Self::ext(env::current_account_id())
-                .with_static_gas(Gas::from_tgas(150))
-                .ref_swap_callback()
+                    .with_static_gas(Gas::from_tgas(150))
+                    .ref_swap_callback(caller),
             );
     }
 
     // Callback after the swap in ref finance
     #[private]
-    pub fn ref_swap_callback(&mut self, #[callback_result] call_result: Result<U128, PromiseError>,) {
+    pub fn ref_swap_callback(
+        &mut self,
+        #[callback_result] call_result: Result<U128, PromiseError>,
+        caller: AccountId,
+    ) {
         let amount_swapped = call_result.unwrap_or_else(|_| panic!("Swap in ref finance failed"));
-        
+
         // Call to ref finance to withdraw the VEX that was swapped into
         // Callback to ref_withdraw_callback
         // If this call fails there will be VEX funds locked in ref finance
@@ -123,20 +153,32 @@ impl Contract {
             .withdraw(self.vex_token_contract.clone(), amount_swapped)
             .then(
                 Self::ext(env::current_account_id())
-                .with_static_gas(Gas::from_tgas(100))
-                .ref_withdraw_callback()
+                    .with_static_gas(Gas::from_tgas(100))
+                    .ref_withdraw_callback(caller),
             );
     }
 
     // Callback after withdrawing the VEX from ref finance
     #[private]
-    pub fn ref_withdraw_callback(&mut self, #[callback_result] call_result: Result<U128, PromiseError>) {
-        let amount_withdrawn = call_result.unwrap_or_else(|_| panic!("Withdraw from ref finance failed"));
+    pub fn ref_withdraw_callback(
+        &mut self,
+        #[callback_result] call_result: Result<U128, PromiseError>,
+        caller: AccountId,
+    ) {
+        let amount_withdrawn =
+            call_result.unwrap_or_else(|_| panic!("Withdraw from ref finance failed"));
 
         // Reward the initial caller for some amount of VEX
+        let passed_match_reward = (U256::from(amount_withdrawn.0) / U256::from(100)).as_u128();
 
-        // // Add the withdrawn VEX to the total staked balance
-        // self.total_staked_balance = U128(self.total_staked_balance.0 + amount_withdrawn.0);
+        ft_contract::ext(self.usdc_token_contract.clone())
+            .with_attached_deposit(NearToken::from_yoctonear(1))
+            .with_static_gas(Gas::from_tgas(30))
+            .ft_transfer(caller, U128(passed_match_reward));
 
+        let left_over_rewards = amount_withdrawn.0 - passed_match_reward;
+
+        // Add the withdrawn VEX to the total staked balance
+        self.total_staked_balance = U128(self.total_staked_balance.0 + left_over_rewards);
     }
 }

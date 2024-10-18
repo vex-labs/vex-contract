@@ -1,5 +1,3 @@
-use core::panic;
-
 use near_sdk::json_types::U128;
 use near_sdk::{near, serde_json};
 
@@ -13,7 +11,7 @@ struct BetInfo {
 }
 
 #[near(serializers = [json])]
-enum Action {
+enum FtTransferAction {
     Stake,
     AddToInsuranceFund,
     Bet(BetInfo),
@@ -24,13 +22,13 @@ impl Contract {
     pub fn ft_on_transfer(&mut self, sender_id: AccountId, amount: U128, msg: String) -> U128 {
         // Send to relevant function based on msg
         match serde_json::from_str(&msg) {
-            Ok(Action::Stake) => {
+            Ok(FtTransferAction::Stake) => {
                 self.deposit(sender_id, amount);
             }
-            Ok(Action::AddToInsuranceFund) => {
+            Ok(FtTransferAction::AddToInsuranceFund) => {
                 self.add_to_insurance_fund(amount);
             }
-            Ok(Action::Bet(bet_info)) => {
+            Ok(FtTransferAction::Bet(bet_info)) => {
                 self.bet(sender_id, amount, bet_info.match_id, bet_info.team);
             }
 
