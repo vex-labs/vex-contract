@@ -17,7 +17,7 @@ impl Contract {
         let difference = U128(loss - self.insurance_fund.0);
 
         // Cross contract call to check how much VEX is needed to be sold to cover the difference
-        // callback to ref_view_callback
+        // callback to ref_loss_view_callback
         // if this call fails we can call the function again
         // as no state was changed
         ref_contract::ext(self.ref_contract.clone())
