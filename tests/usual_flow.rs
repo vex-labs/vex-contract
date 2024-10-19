@@ -11,20 +11,21 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         alice,
         bob,
         admin,
-        vex_contract,
-        usdc_contract,
+        vex_token_contract,
+        usdc_token_contract,
+        ..
     } = setup::TestSetup::new(false).await?;
 
     // Create a new match
     let mut result = admin
-        .call(vex_contract.id(), "create_match")
+        .call(vex_token_contract.id(), "create_match")
         .args_json(serde_json::json!({"game": "CSGO", "team_1": "RUBY", "team_2": "Nexus", "in_odds_1": 1.2, "in_odds_2": 1.6, "date": "17/08/2024"}))
         .transact()
         .await?;
 
     assert!(result.is_success(), "Admin failed to create a match");
 
-    let mut match_view: DisplayMatch = vex_contract
+    let mut match_view: DisplayMatch = vex_token_contract
         .view("get_match")
         .args_json(serde_json::json!({"match_id": "RUBY-Nexus-17/08/2024"}))
         .await?
@@ -43,8 +44,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     // Alice places a bet of 10 USDC on the winning team
     result = ft_transfer_call(
         alice.clone(),
-        usdc_contract.id(),
-        vex_contract.id(),
+        usdc_token_contract.id(),
+        vex_token_contract.id(),
         U128(10 * ONE_USDC),
         serde_json::json!({"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}).to_string(),
     )
@@ -55,26 +56,26 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         "ft_transfer_call failed on Alice's first bet"
     );
 
-    let mut balance: U128 = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
+    let mut balance: U128 = ft_balance_of(&usdc_token_contract, vex_token_contract.id()).await?;
     assert_eq!(
         balance,
         U128(110 * ONE_USDC),
         "Vex contract balance is not correct after Alice's first bet"
     );
-    balance = ft_balance_of(&usdc_contract, alice.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, alice.id()).await?;
     assert_eq!(
         balance,
         U128(90 * ONE_USDC),
         "Alice's balance is not correct after her first bet"
     );
 
-    let mut bet = vex_contract
+    let mut bet = vex_token_contract
         .view("get_bet")
         .args_json(serde_json::json!({"bettor": alice.id(), "bet_id": U64(1)}))
         .await;
     assert!(bet.is_ok(), "Failed to get Alice's bet");
 
-    match_view = vex_contract
+    match_view = vex_token_contract
         .view("get_match")
         .args_json(serde_json::json!({"match_id": "RUBY-Nexus-17/08/2024"}))
         .await?
@@ -93,8 +94,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     // Bob places a bet of 5 USDC on the losing team
     result = ft_transfer_call(
         bob.clone(),
-        usdc_contract.id(),
-        vex_contract.id(),
+        usdc_token_contract.id(),
+        vex_token_contract.id(),
         U128(5 * ONE_USDC),
         serde_json::json!({"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team2}).to_string(),
     )
@@ -105,26 +106,26 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         "ft_transfer_call failed on Bob's first bet"
     );
 
-    balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, vex_token_contract.id()).await?;
     assert_eq!(
         balance,
         U128(115 * ONE_USDC),
         "Vex contract balance is not correct after Bob's first bet"
     );
-    balance = ft_balance_of(&usdc_contract, bob.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, bob.id()).await?;
     assert_eq!(
         balance,
         U128(95 * ONE_USDC),
         "Bob's balance is not correct after his first bet"
     );
 
-    bet = vex_contract
+    bet = vex_token_contract
         .view("get_bet")
         .args_json(serde_json::json!({"bettor": bob.id(), "bet_id": U64(2)}))
         .await;
     assert!(bet.is_ok(), "Failed to get Bob's first bet");
 
-    match_view = vex_contract
+    match_view = vex_token_contract
         .view("get_match")
         .args_json(serde_json::json!({"match_id": "RUBY-Nexus-17/08/2024"}))
         .await?
@@ -143,8 +144,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     // Bob places a bet of 2 USDC on the winning team
     result = ft_transfer_call(
         bob.clone(),
-        usdc_contract.id(),
-        vex_contract.id(),
+        usdc_token_contract.id(),
+        vex_token_contract.id(),
         U128(2 * ONE_USDC),
         serde_json::json!({"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}).to_string(),
     )
@@ -155,20 +156,20 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         "ft_transfer_call failed on Bob's second bet"
     );
 
-    balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, vex_token_contract.id()).await?;
     assert_eq!(
         balance,
         U128(117 * ONE_USDC),
         "Vex contract balance is not correct after Bob's second bet"
     );
-    balance = ft_balance_of(&usdc_contract, bob.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, bob.id()).await?;
     assert_eq!(
         balance,
         U128(93 * ONE_USDC),
         "Bob's balance is not correct after his second bet"
     );
 
-    bet = vex_contract
+    bet = vex_token_contract
         .view("get_bet")
         .args_json(serde_json::json!({"bettor": bob.id(), "bet_id": U64(3)}))
         .await;
@@ -177,8 +178,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     // Alice places a bet on an invalid match
     result = ft_transfer_call(
         alice.clone(),
-        usdc_contract.id(),
-        vex_contract.id(),
+        usdc_token_contract.id(),
+        vex_token_contract.id(),
         U128(10 * ONE_USDC),
         serde_json::json!({"match_id": "Furia-Nexus-17/08/2024", "team": Team::Team1}).to_string(),
     )
@@ -189,20 +190,20 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         "ft_transfer_call failed on Alice's invalid match bet"
     );
 
-    balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, vex_token_contract.id()).await?;
     assert_eq!(
         balance,
         U128(117 * ONE_USDC),
         "Vex contract balance is not correct after Alice's invalid match bet"
     );
-    balance = ft_balance_of(&usdc_contract, alice.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, alice.id()).await?;
     assert_eq!(
         balance,
         U128(90 * ONE_USDC),
         "Alice's balance is not correct after her invalid match bet"
     );
 
-    bet = vex_contract
+    bet = vex_token_contract
         .view("get_bet")
         .args_json(serde_json::json!({"bettor": alice.id(), "bet_id": U64(4)}))
         .await;
@@ -214,8 +215,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     // Alice tries to make a bet less than 1 USDC
     result = ft_transfer_call(
         alice.clone(),
-        usdc_contract.id(),
-        vex_contract.id(),
+        usdc_token_contract.id(),
+        vex_token_contract.id(),
         U128((0.5 * ONE_USDC as f64) as u128),
         serde_json::json!({"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}).to_string(),
     )
@@ -226,20 +227,20 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         "ft_transfer_call failed on Alice's bet less than 1 USDC"
     );
 
-    balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, vex_token_contract.id()).await?;
     assert_eq!(
         balance,
         U128(117 * ONE_USDC),
         "Vex contract balance is not correct after Alice's bet less than 1 USDC"
     );
-    balance = ft_balance_of(&usdc_contract, alice.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, alice.id()).await?;
     assert_eq!(
         balance,
         U128(90 * ONE_USDC),
         "Alice's balance is not correct after her bet less than 1 USDC"
     );
 
-    bet = vex_contract
+    bet = vex_token_contract
         .view("get_bet")
         .args_json(serde_json::json!({"bettor": alice.id(), "bet_id": U64(4)}))
         .await;
@@ -249,7 +250,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Alice tries to claim her funds before the match ends
-    result = claim(alice.clone(), vex_contract.id(), U64(1)).await?;
+    result = claim(alice.clone(), vex_token_contract.id(), U64(1)).await?;
 
     assert!(
         result.is_failure(),
@@ -259,7 +260,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     // Finish match attempted
     result = finish_match(
         admin.clone(),
-        vex_contract.id(),
+        vex_token_contract.id(),
         "RUBY-Nexus-17/08/2024",
         Team::Team1,
     )
@@ -271,15 +272,15 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // End betting
-    result = end_betting(admin.clone(), vex_contract.id(), "RUBY-Nexus-17/08/2024").await?;
+    result = end_betting(admin.clone(), vex_token_contract.id(), "RUBY-Nexus-17/08/2024").await?;
 
     assert!(result.is_success(), "Admin failed to end betting");
 
     // Alice tries to place a bet after betting ended
     result = ft_transfer_call(
         alice.clone(),
-        usdc_contract.id(),
-        vex_contract.id(),
+        usdc_token_contract.id(),
+        vex_token_contract.id(),
         U128(10 * ONE_USDC),
         serde_json::json!({"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}).to_string(),
     )
@@ -290,20 +291,20 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         "ft_transfer_call failed on Alice's bet after betting ended"
     );
 
-    balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, vex_token_contract.id()).await?;
     assert_eq!(
         balance,
         U128(117 * ONE_USDC),
         "Vex contract balance is not correct after Alice's bet after betting ended"
     );
-    balance = ft_balance_of(&usdc_contract, alice.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, alice.id()).await?;
     assert_eq!(
         balance,
         U128(90 * ONE_USDC),
         "Alice's balance is not correct after her bet after betting ended"
     );
 
-    bet = vex_contract
+    bet = vex_token_contract
         .view("get_bet")
         .args_json(serde_json::json!({"bettor": alice.id(), "bet_id": U64(4)}))
         .await;
@@ -313,7 +314,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Alice tries to claim her funds before the match is finished
-    result = claim(alice.clone(), vex_contract.id(), U64(1)).await?;
+    result = claim(alice.clone(), vex_token_contract.id(), U64(1)).await?;
 
     assert!(
         result.is_failure(),
@@ -323,7 +324,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     // Finish match
     result = finish_match(
         admin.clone(),
-        vex_contract.id(),
+        vex_token_contract.id(),
         "RUBY-Nexus-17/08/2024",
         Team::Team1,
     )
@@ -332,7 +333,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     assert!(result.is_success(), "Admin failed to finish the match");
 
     // Admin tries to end betting after match is finished
-    result = end_betting(admin.clone(), vex_contract.id(), "RUBY-Nexus-17/08/2024").await?;
+    result = end_betting(admin.clone(), vex_token_contract.id(), "RUBY-Nexus-17/08/2024").await?;
 
     assert!(
         result.is_failure(),
@@ -340,7 +341,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Admin tries to cancel match after match is finished
-    result = cancel_match(admin.clone(), vex_contract.id(), "RUBY-Nexus-17/08/2024").await?;
+    result = cancel_match(admin.clone(), vex_token_contract.id(), "RUBY-Nexus-17/08/2024").await?;
 
     assert!(
         result.is_failure(),
@@ -350,8 +351,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     // Alice tries to place a bet after the match is finished
     result = ft_transfer_call(
         alice.clone(),
-        usdc_contract.id(),
-        vex_contract.id(),
+        usdc_token_contract.id(),
+        vex_token_contract.id(),
         U128(10 * ONE_USDC),
         serde_json::json!({"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}).to_string(),
     )
@@ -362,20 +363,20 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         "ft_transfer_call failed on Alice's bet after the match was finished"
     );
 
-    balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, vex_token_contract.id()).await?;
     assert_eq!(
         balance,
         U128(117 * ONE_USDC),
         "Vex contract balance is not correct after Alice's bet after the match was finished"
     );
-    balance = ft_balance_of(&usdc_contract, alice.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, alice.id()).await?;
     assert_eq!(
         balance,
         U128(90 * ONE_USDC),
         "Alice's balance is not correct after her bet after the match was finished"
     );
 
-    bet = vex_contract
+    bet = vex_token_contract
         .view("get_bet")
         .args_json(serde_json::json!({"bettor": alice.id(), "bet_id": U64(4)}))
         .await;
@@ -385,17 +386,17 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Bob tries to claim Alice's bet
-    result = claim(bob.clone(), vex_contract.id(), U64(1)).await?;
+    result = claim(bob.clone(), vex_token_contract.id(), U64(1)).await?;
 
     assert!(result.is_failure(), "Bob managed to claim Alice's bet");
 
     // Bob tries to claim the bet he lost
-    result = claim(bob.clone(), vex_contract.id(), U64(2)).await?;
+    result = claim(bob.clone(), vex_token_contract.id(), U64(2)).await?;
 
     assert!(result.is_failure(), "Bob managed to claim a bet he lost");
 
     // Alice tries to claim a bet that does not exist
-    result = claim(alice.clone(), vex_contract.id(), U64(3)).await?;
+    result = claim(alice.clone(), vex_token_contract.id(), U64(3)).await?;
 
     assert!(
         result.is_failure(),
@@ -403,19 +404,19 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Alice claims the bet he won
-    result = claim(alice.clone(), vex_contract.id(), U64(1)).await?;
+    result = claim(alice.clone(), vex_token_contract.id(), U64(1)).await?;
 
     assert!(result.is_success(), "Alice failed to claim her bet");
 
     let mut winnings: u128 = 16617241;
     let new_contract_bal = 117 * ONE_USDC - winnings;
-    balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, vex_token_contract.id()).await?;
     assert_eq!(
         balance,
         U128(new_contract_bal),
         "Vex contract balance is not correct after Alice claimed her bet"
     );
-    balance = ft_balance_of(&usdc_contract, alice.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, alice.id()).await?;
     assert_eq!(
         balance,
         U128(90 * ONE_USDC + winnings),
@@ -423,18 +424,18 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Bob claims the bet he won
-    result = claim(bob.clone(), vex_contract.id(), U64(3)).await?;
+    result = claim(bob.clone(), vex_token_contract.id(), U64(3)).await?;
 
     assert!(result.is_success(), "Bob failed to claim his bet");
 
     winnings = 3325152;
-    balance = ft_balance_of(&usdc_contract, vex_contract.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, vex_token_contract.id()).await?;
     assert_eq!(
         balance,
         U128(new_contract_bal - winnings),
         "Vex contract balance is not correct after Bob claimed his bet"
     );
-    balance = ft_balance_of(&usdc_contract, bob.id()).await?;
+    balance = ft_balance_of(&usdc_token_contract, bob.id()).await?;
     assert_eq!(
         balance,
         U128(93 * ONE_USDC + winnings),
@@ -442,7 +443,7 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Alice tries to claim her bet for a second time
-    result = claim(alice.clone(), vex_contract.id(), U64(1)).await?;
+    result = claim(alice.clone(), vex_token_contract.id(), U64(1)).await?;
 
     assert!(
         result.is_failure(),

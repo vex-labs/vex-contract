@@ -162,7 +162,14 @@ impl TestSetup {
 
         res = main_contract
             .call("init")
-            .args_json(json!({"admin": admin.id(), "usdc_token_contract": ft_contract_id}))
+            .args_json(serde_json::json!({
+                "admin": admin.id(), 
+                "usdc_token_contract": ft_contract_id, 
+                "vex_token_contract": vex_token_contract.id(), 
+                "treasury": admin.id(), 
+                "ref_contract": ref_contract.id(),
+                "ref_pool_id": 1,
+            }))
             .transact()
             .await?;
 
