@@ -38,8 +38,8 @@ impl TestSetup {
         let admin = create_account(&root, "admin").await?;
 
         // Deploy contract
-        let contract_wasm = near_workspaces::compile_project("./").await?;
-        // let contract_wasm = std::fs::read("./target/wasm32-unknown-unknown/release/main_contracts.wasm")?;
+        // let contract_wasm = near_workspaces::compile_project("./").await?;
+        let contract_wasm = std::fs::read("./target/wasm32-unknown-unknown/release/vex_contracts.wasm")?;
         let main_contract = sandbox.dev_deploy(&contract_wasm).await?;
 
         // Deploy USDC token contract
@@ -82,6 +82,8 @@ impl TestSetup {
             .call("new")
             .args_json(serde_json::json!({
                 "owner_id": admin.id(),
+                "boost_farm_id": admin.id(),
+                "burrowland_id": admin.id(),
                 "exchange_fee": 4, // TODO: Check this is the same as the actual ref contract on mainnet and testnet
                 "referral_fee": 1,
             }))
@@ -93,7 +95,7 @@ impl TestSetup {
             "Failed to initialize ref finance contract"
         );
 
-        // Register accounts in FT contracts and send 1000 of each
+        // Register accounts in FT contracts and send 100 of each
         for account in [
             alice.clone(),
             bob.clone(),
@@ -126,12 +128,12 @@ impl TestSetup {
                 "Failed to register account in VEX token contract"
             );
 
-            // Transfer 1000 USDC to accounts
+            // Transfer 100 USDC to accounts
             let transfer = ft_transfer(
                 &admin,
                 account.clone(),
                 usdc_token_contract.clone(),
-                U128(1000 * ONE_USDC),
+                U128(100 * ONE_USDC),
             )
             .await?;
             assert!(
@@ -139,12 +141,12 @@ impl TestSetup {
                 "Failed to transfer 100 FTs to account"
             );
 
-            // Transfer 1000 VEX to accounts
+            // Transfer 100 VEX to accounts
             let transfer = ft_transfer(
                 &admin,
                 account.clone(),
                 vex_token_contract.clone(),
-                U128(1000 * ONE_USDC),
+                U128(100 * ONE_USDC),
             )
             .await?;
             assert!(
@@ -180,13 +182,13 @@ impl TestSetup {
             .call("add_simple_pool")
             .args_json(serde_json::json!({
                 "tokens": vec![usdc_token_contract.id(), vex_token_contract.id()],
-                "fee": "25", // Check this fee is the same as our pools
+                "fee": 25, // Check this fee is the same as our pools
             }))
             .deposit(NearToken::from_millinear(100))
             .transact()
             .await?;
 
-        assert!(res.is_success(), "Failed to initialize ref contract");
+        assert!(res.is_success(), "Failed to create ref pool");
 
         Ok(TestSetup {
             alice,
@@ -271,7 +273,7 @@ pub async fn claim(
     let claim = account
         .call(main_contract_id, "claim")
         .args_json(serde_json::json!({"bet_id": bet_id}))
-        .gas(Gas::from_tgas(50))
+        .gas(Gas::from_tgas(150))
         .transact()
         .await?;
 
@@ -288,7 +290,7 @@ pub async fn finish_match(
     let finish_match = account
         .call(main_contract_id, "finish_match")
         .args_json(serde_json::json!({"match_id": match_id, "winner": winner}))
-        .gas(Gas::from_tgas(50))
+        .gas(Gas::from_tgas(300))
         .transact()
         .await?;
 
@@ -342,3 +344,6 @@ pub async fn change_admin(
 
     Ok(change_admin)
 }
+
+
+//     dbg!(&result);
