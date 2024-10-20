@@ -9,14 +9,14 @@ async fn test_wrong_ft() -> Result<(), Box<dyn std::error::Error>> {
     let TestSetup {
         alice,
         admin,
-        vex_token_contract,
+        main_contract,
         usdc_token_contract,
         ..
     } = setup::TestSetup::new(true).await?;
 
     // Create a new match
     let mut result = admin
-    .call(vex_token_contract.id(), "create_match")
+    .call(main_contract.id(), "create_match")
     .args_json(serde_json::json!({"game": "CSGO", "team_1": "RUBY", "team_2": "Nexus", "in_odds_1": 1.2, "in_odds_2": 1.6, "date": "17/08/2024"}))
     .transact()
     .await?;
@@ -27,9 +27,9 @@ async fn test_wrong_ft() -> Result<(), Box<dyn std::error::Error>> {
     result = ft_transfer_call(
         alice.clone(),
         usdc_token_contract.id(),
-        vex_token_contract.id(),
+        main_contract.id(),
         U128(10 * ONE_USDC),
-        serde_json::json!({"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}).to_string(),
+        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}}).to_string(),
     )
     .await?;
 
@@ -38,7 +38,7 @@ async fn test_wrong_ft() -> Result<(), Box<dyn std::error::Error>> {
         "ft_transfer_call failed on Alice's bet"
     );
 
-    let mut balance = ft_balance_of(&usdc_token_contract, vex_token_contract.id()).await?;
+    let mut balance = ft_balance_of(&usdc_token_contract, main_contract.id()).await?;
     assert_eq!(
         balance,
         U128(100 * ONE_USDC),
@@ -51,7 +51,7 @@ async fn test_wrong_ft() -> Result<(), Box<dyn std::error::Error>> {
         "Alice's balance is not correct after her first bet"
     );
 
-    let bet = vex_token_contract
+    let bet = main_contract
         .view("get_bet")
         .args_json(serde_json::json!({"bettor": alice.id(), "bet_id": U64(1)}))
         .await;
