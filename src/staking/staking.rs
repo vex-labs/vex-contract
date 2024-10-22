@@ -37,7 +37,7 @@ impl Contract {
         relevant_account.stake_shares = U128(relevant_account.stake_shares.0 + num_shares);
 
         // Sets the time when they can next unstake to 1 week from now
-        relevant_account.unstake_timestamp = U64(env::block_timestamp() + ONE_WEEK);
+        relevant_account.unstake_timestamp = U64(env::block_timestamp() + self.unstake_time_buffer);
 
         // The staked amount that will be added to the total to guarantee the "stake" share price
         // doesnt decrease when staking because of rounding. The difference between `stake_amount` and `charge_amount` is paid

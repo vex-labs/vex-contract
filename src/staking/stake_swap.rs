@@ -1,4 +1,4 @@
-use near_sdk::{env, near, require, Gas, NearToken, PromiseError};
+use near_sdk::{env, near, require, Gas, NearToken, PromiseError, log};
 
 pub use crate::ext::*;
 use crate::*;
@@ -13,10 +13,10 @@ impl Contract {
         );
 
         let previous_timestamp = self.last_stake_swap_timestamp;
-        self.last_stake_swap_timestamp = U64(env::block_timestamp());
 
         // If the staking queue is empty then skip and update the last stake swap timestamp
         if self.staking_rewards_queue.is_empty() {
+            self.last_stake_swap_timestamp = U64(env::block_timestamp());
             return;
         }
 
@@ -38,7 +38,7 @@ impl Contract {
                 // Get rewards for this match has passed
                 let passed_match_reward = (U256::from(finished_match_time_passed)
                     * U256::from(first.staking_rewards.0)
-                    / U256::from(ONE_MONTH))
+                    / U256::from(self.rewards_period))
                 .as_u128();
 
                 finished_matches_rewards += passed_match_reward;
@@ -52,15 +52,17 @@ impl Contract {
 
         // Calculate the rewards for the matches that have not expired
         let active_match_rewards = (U256::from(time_passed) * U256::from(new_usdc_staking_rewards)
-            / U256::from(ONE_MONTH))
+            / U256::from(self.rewards_period))
         .as_u128();
 
         let total_rewards_to_swap = finished_matches_rewards + active_match_rewards;
 
         require!(
-            total_rewards_to_swap > 100 * ONE_USDC,
+            total_rewards_to_swap > self.min_swap_amount,
             "Rewards to swap must be greather than 100"
         );
+
+        self.last_stake_swap_timestamp = U64(env::block_timestamp());
 
         let caller = env::predecessor_account_id();
 
@@ -117,7 +119,7 @@ impl Contract {
         let action = create_swap_args(
             self.ref_pool_id,
             self.usdc_token_contract.clone(),
-            self.usdc_token_contract.clone(),
+            self.vex_token_contract.clone(),
             amount_deposited,
             U128(0),
         );
@@ -144,6 +146,7 @@ impl Contract {
         #[callback_result] call_result: Result<U128, PromiseError>,
         caller: AccountId,
     ) {
+        log!("Ref profit swap callback");
         let amount_swapped = call_result.unwrap_or_else(|_| panic!("Swap in ref finance failed"));
 
         // Call to ref finance to withdraw the VEX that was swapped into
@@ -168,6 +171,7 @@ impl Contract {
         #[callback_result] call_result: Result<U128, PromiseError>,
         caller: AccountId,
     ) {
+        log!("Ref profit withdraw callback");
         let amount_withdrawn =
             call_result.unwrap_or_else(|_| panic!("Withdraw from ref finance failed"));
 
