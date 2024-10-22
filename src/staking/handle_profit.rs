@@ -32,7 +32,7 @@ impl Contract {
         // Add to staking rewards queue
         let match_stake_info = MatchStakeInfo {
             staking_rewards: U128(usdc_for_staking),
-            stake_end_time: U64(env::block_timestamp() + ONE_MONTH),
+            stake_end_time: U64(env::block_timestamp() + self.rewards_period),
         };
         self.staking_rewards_queue.push_back(match_stake_info);
     }

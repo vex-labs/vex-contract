@@ -70,6 +70,15 @@ pub struct Contract {
 
     // The amount of USDC that needs to be added to be added to the contract because an error occurred
     pub funds_to_add: U128,
+
+    // The time that rewards for staking are distributed over in nanoseconds, default is one month - 2_628_000_000_000_000
+    pub rewards_period: u64,
+
+    // The buffer time in nanoseconds before a user unstake since last staking, default is one week - 604_800_000_000_000
+    pub unstake_time_buffer: u64,
+    
+    // The minimum amount of rewards required to be able to swap, default is 100 USDC - 100_000_000
+    pub min_swap_amount: u128,
 }
 
 #[near(serializers = [borsh])]
@@ -200,16 +209,10 @@ pub const ONE_USDC: u128 = 1_000_000; // Note that this will have to change if U
 pub const FIFTY_VEX: u128 = 50_000_000_000_000_000_000; // Note that this will have to change if VEX decimals are not 18
 
 // Amount of VEX allocated for rounding errors
-pub const STAKE_SHARE_PRICE_GUARANTEE_FUND: u128 = 1_000_000_000_000_000;
+pub const STAKE_SHARE_PRICE_GUARANTEE_FUND: u128 = 1_000_000_000_000_000_000;
 
 // The initial account balance for the contract
-pub const INITIAL_ACCOUNT_BALANCE: u128 = 50_000_000_000_000_000_000; // The contract needs to be initialized with 50 VEX
-
-// One month in nanoseconds
-pub const ONE_MONTH: u64 = 2_628_000_000_000_000;
-
-// One week in nanoseconds
-pub const ONE_WEEK: u64 = 604_800_000_000_000;
+pub const INITIAL_ACCOUNT_BALANCE: u128 = 100_000_000_000_000_000_000; // The contract needs to be initialized with 100 VEX
 
 #[near]
 impl Contract {
@@ -221,7 +224,10 @@ impl Contract {
         vex_token_contract: AccountId,
         treasury: AccountId,
         ref_contract: AccountId,
-        ref_pool_id: u64,
+        ref_pool_id: U64,
+        rewards_period: U64,
+        unstake_time_buffer: U64,
+        min_swap_amount: U128,
     ) -> Self {
         let total_staked_balance = U128(INITIAL_ACCOUNT_BALANCE - STAKE_SHARE_PRICE_GUARANTEE_FUND);
 
@@ -231,7 +237,7 @@ impl Contract {
             vex_token_contract,
             treasury,
             ref_contract,
-            ref_pool_id,
+            ref_pool_id: ref_pool_id.0,
             matches: IterableMap::new(b"m"),
             bets_by_user: LookupMap::new(b"u"),
             last_bet_id: U64(0),
@@ -245,6 +251,9 @@ impl Contract {
             insurance_fund: U128(0),
             funds_to_payout: U128(0),
             funds_to_add: U128(0),
+            rewards_period: rewards_period.0,
+            unstake_time_buffer: unstake_time_buffer.0,
+            min_swap_amount: min_swap_amount.0,
         }
     }
 }

@@ -5,13 +5,13 @@ pub use crate::ext::*;
 use crate::*;
 
 #[near(serializers = [json])]
-struct BetInfo {
+pub struct BetInfo {
     match_id: MatchId,
     team: Team,
 }
 
 #[near(serializers = [json])]
-enum FtTransferAction {
+pub enum FtTransferAction {
     Stake,
     AddUSDC,
     Bet(BetInfo),
