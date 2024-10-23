@@ -1,10 +1,19 @@
 use near_sdk::json_types::U128;
 use near_sdk::near;
 
-use crate::bettor::determine_potential_winnings;
+use crate::betting::bettor::determine_potential_winnings;
 use crate::*;
 
-#[allow(dead_code)]
+#[near(serializers = [json])]
+pub struct ContractInfo {
+    admin: AccountId,
+    usdc_token_contract: AccountId,
+    vex_token_contract: AccountId,
+    treasury: AccountId,
+    ref_contract: AccountId,
+    ref_pool_id: U64,
+}
+
 #[near(serializers = [json])]
 pub struct DisplayMatch {
     pub match_id: MatchId,
@@ -21,10 +30,19 @@ pub struct DisplayMatch {
 
 #[near]
 impl Contract {
-    pub fn get_admin(&self) -> &AccountId {
-        &self.admin
+    // Get general contract info
+    pub fn get_contract_info(&self) -> ContractInfo {
+        ContractInfo {
+            admin: self.admin.clone(),
+            usdc_token_contract: self.usdc_token_contract.clone(),
+            vex_token_contract: self.vex_token_contract.clone(),
+            treasury: self.treasury.clone(),
+            ref_contract: self.ref_contract.clone(),
+            ref_pool_id: U64(self.ref_pool_id),
+        }
     }
 
+    // Returns a list of matches wihtin a range
     pub fn get_matches(&self, from_index: &Option<u32>, limit: &Option<u32>) -> Vec<DisplayMatch> {
         let from = from_index.unwrap_or(0);
         let limit = limit.unwrap_or(self.matches.len());
@@ -38,6 +56,7 @@ impl Contract {
             .collect()
     }
 
+    // Returns a specific match by its ID
     pub fn get_match(&self, match_id: &MatchId) -> DisplayMatch {
         // Get relevant match
         let relevant_match = self
@@ -49,6 +68,8 @@ impl Contract {
         format_match(match_id, relevant_match)
     }
 
+    // Returns the potential winnings you would get if you bet a certain
+    // amount on a certain match on a certain team
     pub fn get_potential_winnings(
         &self,
         match_id: &MatchId,
@@ -70,6 +91,7 @@ impl Contract {
         )
     }
 
+    // Returns a specific bet by its user and ID
     pub fn get_bet(&self, bettor: &AccountId, bet_id: &BetId) -> &Bet {
         // Get relevant user
         let relevant_user = self
@@ -83,6 +105,7 @@ impl Contract {
             .unwrap_or_else(|| panic!("No bet exists with bet id: {:?}", bet_id))
     }
 
+    // Returns a list of bets made by a user within a range
     pub fn get_users_bets(
         &self,
         bettor: &AccountId,
@@ -106,9 +129,15 @@ impl Contract {
             .map(|(&key, value)| (key, value))
             .collect()
     }
+
+    // Get funds to pay out to winners
+    pub fn get_funds_to_payout(&self) -> U128 {
+        self.funds_to_payout
+    }
 }
 
-fn format_match(match_id: &MatchId, match_struct: &Match) -> DisplayMatch {
+// Helper function to format a match to be displayed
+pub fn format_match(match_id: &MatchId, match_struct: &Match) -> DisplayMatch {
     let (team_1_odds, team_2_odds) = determine_approx_odds(
         &match_struct.team_1_total_bets,
         &match_struct.team_2_total_bets,
@@ -132,7 +161,8 @@ fn format_match(match_id: &MatchId, match_struct: &Match) -> DisplayMatch {
     }
 }
 
-fn determine_approx_odds(team_1_total_bets: &U128, team_2_total_bets: &U128) -> (f64, f64) {
+// Helper function to determine approximate odds, odds for an infitesimal bet
+pub fn determine_approx_odds(team_1_total_bets: &U128, team_2_total_bets: &U128) -> (f64, f64) {
     let team_1_bets: f64 = team_1_total_bets.0 as f64;
     let team_2_bets: f64 = team_2_total_bets.0 as f64;
 
