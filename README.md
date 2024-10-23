@@ -1,6 +1,7 @@
-# betting-system
+# vex-contract
 
-This repo holds the VEX betting smart contract.
+This repo holds the main VEX contract that includes a betting and staking system.
+Please note that these docs are currently out of date since the staking system was added 
 
 # Contributing
 
