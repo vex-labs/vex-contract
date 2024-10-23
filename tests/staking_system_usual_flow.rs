@@ -1,4 +1,5 @@
 // TODO: Make these tests acutually good and comprehensive, add proper variable names and comments, calculate and check exact or at least rounded balances
+// Check you can't do things you shouldn't be able to do
 // Maybe merge with other tests
 
 use near_sdk::json_types::U128;
@@ -554,9 +555,77 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
     println!("Bob's staked balance decreased by: {}", bob_third_staked_balance.0 - bob_fourth_staked_balance.0);
     
     // Alice unstakes and withdraws all her VEX
+    let alice_balance_before = ft_balance_of(&vex_token_contract, alice.id()).await?;
 
+    result = unstake_all(alice.clone(), main_contract.id()).await?;
+
+    assert!(
+        result.is_success(),
+        "unstake_all failed on Alice's unstake"
+    );
+
+    // Check that Alice's staked balance is zero
+    let alice_staked_balance: U128 = main_contract
+        .view("get_user_staked_bal")
+        .args_json(serde_json::json!({"account_id": alice.id()}))
+        .await?.json()?;
+    assert_eq!(
+        alice_staked_balance,
+        U128(0),
+        "Alice's staked balance is not correct after unstaking all"
+    );
+
+    result = withdraw_all(alice.clone(), main_contract.id()).await?;
+
+    dbg!(&result);
+
+    assert!(
+        result.is_success(),
+        "withdraw_all failed on Alice's withdraw"
+    );
+
+    // Check that Alice's balance has increased
+    let alice_balance_after = ft_balance_of(&vex_token_contract, alice.id()).await?;
+    assert!(
+        alice_balance_after.0 > alice_balance_before.0,
+        "Alice's balance is not correct after unstaking all"
+    );
+    println!("Alice's new balance: {}", alice_balance_after.0);
 
     // Bob unstakes and withdraws some of his VEX
+    let bob_balance_before = ft_balance_of(&vex_token_contract, bob.id()).await?;
+
+    result = unstake(bob.clone(), main_contract.id(), U128(10 * ONE_VEX)).await?;
+
+    assert!(
+        result.is_success(),
+        "unstake failed on Bob's unstake"
+    );
+
+    // Check that Bob's staked balance has decreased
+    let bob_staked_balance: U128 = main_contract
+        .view("get_user_staked_bal")
+        .args_json(serde_json::json!({"account_id": bob.id()}))
+        .await?.json()?;
+    assert!(
+        bob_staked_balance < bob_fourth_staked_balance,
+        "Bob's staked balance is not correct after withdrawing some"
+    );
+
+    result = withdraw_all(bob.clone(), main_contract.id()).await?;
+
+    assert!(
+        result.is_success(),
+        "withdraw_all failed on Bob's withdraw"
+    );
+
+    // Check that Bob's balance has increased
+    let bob_balance_after = ft_balance_of(&vex_token_contract, bob.id()).await?;
+    assert!(
+        bob_balance_after.0 > bob_balance_before.0,
+        "Bob's balance is not correct after withdrawing all"
+    );
+    println!("Bob's new vex balance: {}", bob_balance_after.0);
 
     Ok(())
 }
