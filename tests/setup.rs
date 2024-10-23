@@ -295,6 +295,7 @@ pub async fn ft_transfer(
         .deposit(NearToken::from_yoctonear(1))
         .transact()
         .await?;
+
     Ok(transfer)
 }
 
@@ -417,13 +418,13 @@ pub async fn stake_all(
     account: Account,
     main_contract_id: &AccountId,
 ) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
-    let change_admin = account
+    let stake = account
         .call(main_contract_id, "stake_all")
         .gas(Gas::from_tgas(50))
         .transact()
         .await?;
 
-    Ok(change_admin)
+    Ok(stake)
 }
 
 #[allow(dead_code)]
@@ -431,11 +432,55 @@ pub async fn perform_stake_swap(
     account: Account,
     main_contract_id: &AccountId,
 ) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
-    let change_admin = account
+    let swap = account
         .call(main_contract_id, "perform_stake_swap")
         .gas(Gas::from_tgas(300))
         .transact()
         .await?;
 
-    Ok(change_admin)
+    Ok(swap)
+}
+
+#[allow(dead_code)]
+pub async fn withdraw_all(
+    account: Account,
+    main_contract_id: &AccountId,
+) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
+    let withdraw = account
+        .call(main_contract_id, "withdraw_all")
+        .gas(Gas::from_tgas(50))
+        .transact()
+        .await?;
+
+    Ok(withdraw)
+}
+
+#[allow(dead_code)]
+pub async fn unstake_all(
+    account: Account,
+    main_contract_id: &AccountId,
+) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
+    let unstake = account
+        .call(main_contract_id, "unstake_all")
+        .gas(Gas::from_tgas(50)) 
+        .transact()
+        .await?;
+
+    Ok(unstake)
+}
+
+#[allow(dead_code)]
+pub async fn unstake(
+    account: Account,
+    main_contract_id: &AccountId,
+    amount: U128,
+) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
+    let unstake = account
+        .call(main_contract_id, "unstake")
+        .args_json(serde_json::json!({"amount": amount}))
+        .gas(Gas::from_tgas(50))
+        .transact()
+        .await?;
+
+    Ok(unstake)
 }
