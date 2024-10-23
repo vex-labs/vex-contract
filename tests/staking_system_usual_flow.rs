@@ -2,7 +2,7 @@
 // Maybe merge with other tests
 
 use near_sdk::json_types::{U128, U64};
-use vex_contracts::{MatchStakeInfo, Team};
+use vex_contracts::{MatchStakeInfo, Team, UserStake};
 use vex_contracts::ft_on_transfer::FtTransferAction;
 mod setup;
 use crate::setup::*;
@@ -235,19 +235,25 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
     println!("Staking rewards end time: {}", staking_rewards_queue[0].stake_end_time.0);
     println!("Staking rewards amount: {}", staking_rewards_queue[0].staking_rewards.0);
 
+    // Check the total usdc staking rewards
+    let total_usdc_rewards_to_swap: U128 = main_contract.view("get_usdc_staking_rewards").await?.json()?;
+    assert!(
+        total_usdc_rewards_to_swap.0 > 0,
+        "Total USDC rewards to swap is not correct after the first match has finished"
+    );
+    println!("Total USDC rewards to swap: {}", total_usdc_rewards_to_swap.0);
+
     // Advance some amount of blocks less than the staking rewards end time
-    sandbox.fast_forward(50).await?;
+    sandbox.fast_forward(100).await?;
 
     // Save the total staked balance before the swap
     let total_staked_balance_before: U128 = main_contract.view("get_total_staked_balance").await?.json()?;
 
-    // Save the balance of swap caller before the swap
-    let balance_before = ft_balance_of(&usdc_token_contract, alice.id()).await?;
+    // Save the VEX balance of swap caller before the swap
+    let balance_before = ft_balance_of(&vex_token_contract, alice.id()).await?;
 
     // Call peform_stake_swap
     result = perform_stake_swap(alice.clone(), main_contract.id()).await?;
-
-    dbg!(&result);
 
     assert!(
         result.is_success(),
@@ -270,6 +276,29 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
     );
     println!("Total staked balance increased by: {}", total_staked_balance.0 - total_staked_balance_before.0);
 
+    // Check that both user's staked balance has increased
+    let alice_staked_balance: U128 = main_contract
+        .view("get_user_staked_bal")
+        .args_json(serde_json::json!({"account_id": alice.id()}))
+        .await?.json()?;
+
+    assert!(
+        alice_staked_balance > U128(50 * ONE_VEX),
+        "Alice's staked balance has not increased after first stake swap"
+    );
+    println!("Alice's staked balance increased by: {}", alice_staked_balance.0 - 50 * ONE_VEX);
+
+    let bob_staked_balance: U128 = main_contract
+        .view("get_user_staked_bal")
+        .args_json(serde_json::json!({"account_id": bob.id()}))
+        .await?.json()?;
+
+    assert!(
+        bob_staked_balance > U128(100 * ONE_VEX),
+        "Bob's staked balance has not increased after first stake swap"
+    );
+    println!("Bob's staked balance increased by: {}", bob_staked_balance.0 - 100 * ONE_VEX);
+
     // Check that the balance of the swap caller has increased
     let balance = ft_balance_of(&vex_token_contract, alice.id()).await?;
     assert!(
@@ -278,29 +307,157 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
     );
     println!("Balance of the swap caller increased by: {}", balance.0 - balance_before.0);
 
+    // Add another game 
+    result = admin
+        .call(main_contract.id(), "create_match")
+        .args_json(serde_json::json!({"game": "Overwatch", "team_1": "Dallas_Fuel", "team_2": "Seoul_Dynasty", "in_odds_1": 1.0, "in_odds_2": 1.0, "date": "18/08/2024"}))
+        .transact()
+        .await?;
+
+    assert!(result.is_success(), "Admin failed to create a match");
+
+    // Alice places a bet of 10 USDC on the losing team
+    result = ft_transfer_call(
+        alice.clone(),
+        usdc_token_contract.id(),
+        main_contract.id(),
+        U128(10 * ONE_USDC),
+        serde_json::json!({"Bet" : {"match_id": "Dallas_Fuel-Seoul_Dynasty-18/08/2024", "team": Team::Team2}}).to_string(),
+    )
+    .await?;
+
+    assert!(
+        result.is_success(),
+        "ft_transfer_call failed on Alice's second bet"
+    );
+
+    // End betting
+    result = end_betting(admin.clone(), main_contract.id(), "Dallas_Fuel-Seoul_Dynasty-18/08/2024").await?;
+
+    assert!(result.is_success(), "Admin failed to end betting");
+
+    // Fast forward a little bit 
+    sandbox.fast_forward(10).await?;
+
+    // Finish match
+    result = finish_match(
+        admin.clone(),
+        main_contract.id(),
+        "Dallas_Fuel-Seoul_Dynasty-18/08/2024",
+        Team::Team1,
+    )
+    .await?;
+
+    assert!(result.is_success(), "Admin failed to finish the match");
+
+    // Some rewards were distributed to stakers here also, check that staked balance increased
+    let total_staked_balance_after: U128 = main_contract.view("get_total_staked_balance").await?.json()?;
+    assert!(
+        total_staked_balance_after.0 > total_staked_balance.0,
+        "Total staked amount is not correct after the second match has finished"
+    );
+    println!("Total staked balance increased by: {}", total_staked_balance_after.0 - total_staked_balance.0);
+
+    // Check that both user's staked balance has increased
+    let alice_second_staked_balance: U128 = main_contract
+        .view("get_user_staked_bal")
+        .args_json(serde_json::json!({"account_id": alice.id()}))
+        .await?.json()?;
+    assert!(
+        alice_second_staked_balance > alice_staked_balance,
+        "Alice's staked balance has not increased after second match finished"
+    );
+    println!("Alice's staked balance increased by: {}", alice_second_staked_balance.0 - alice_staked_balance.0);
+
+    let bob_second_staked_balance: U128 = main_contract
+        .view("get_user_staked_bal")
+        .args_json(serde_json::json!({"account_id": bob.id()}))
+        .await?.json()?;
+    assert!(
+        bob_second_staked_balance > bob_staked_balance,
+        "Bob's staked balance has not increased after second match finished"
+    );
+    println!("Bob's staked balance increased by: {}", bob_second_staked_balance.0 - bob_staked_balance.0);
+
+    // Check there are now two matches in the staking rewards queue
+    let staking_rewards_queue: Vec<MatchStakeInfo> = main_contract.view("get_staking_rewards_queue").await?.json()?;
+    assert_eq!(
+        staking_rewards_queue.len(),
+        2,
+        "Staking rewards queue is not correct after the second match has finished"
+    );
+    println!("Staking rewards end time: {}", staking_rewards_queue[1].stake_end_time.0);
+    println!("Staking rewards amount: {}", staking_rewards_queue[1].staking_rewards.0);
+
+    // Check the total usdc staking rewards
+    let new_total_usdc_rewards_to_swap: U128 = main_contract.view("get_usdc_staking_rewards").await?.json()?;
+    assert!(
+        new_total_usdc_rewards_to_swap.0 > total_usdc_rewards_to_swap.0,
+        "Total USDC rewards to swap is not correct after the second match has finished"
+    );
+    println!("Total USDC rewards to swap: {}", new_total_usdc_rewards_to_swap.0);
     
+    // Advance some amount of blocks such that the first match is removed from the queue but not the second 
+    sandbox.fast_forward(100).await?;
 
-    // // Alice places a bet of 20 USDC on the winning team
-    // result = ft_transfer_call(
-    //     alice.clone(),
-    //     usdc_token_contract.id(),
-    //     main_contract.id(),
-    //     U128(20 * ONE_USDC),
-    //     serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}}).to_string(),
-    // )
-    // .await?;
+    // Save the total staked balance before the swap
+    let total_staked_balance_before: U128 = main_contract.view("get_total_staked_balance").await?.json()?;
 
-    // assert!(
-    //     result.is_success(),
-    //     "ft_transfer_call failed on Alice's first bet"
-    // );
+    // Save the VEX balance of swap caller before the swap
+    let balance_before = ft_balance_of(&vex_token_contract, alice.id()).await?;
 
-    // balance = ft_balance_of(&usdc_token_contract, main_contract.id()).await?;
-    // assert_eq!(
-    //     balance,
-    //     U128(175 * ONE_USDC),
-    //     "Vex contract balance is not correct after Alice's first bet"
-    // );
+    // Call peform_stake_swap
+    result = perform_stake_swap(alice.clone(), main_contract.id()).await?;
+
+    assert!(
+        result.is_success(),
+        "perform_stake_swap failed"
+    );
+
+    // Check that one of the rewards are still in the queue 
+    let staking_rewards_queue: Vec<MatchStakeInfo> = main_contract.view("get_staking_rewards_queue").await?.json()?;
+    assert_eq!(
+        staking_rewards_queue.len(),
+        1,
+        "Staking rewards queue is not correct after fast forwarding"
+    );
+
+    // Check that the total staked balance has increased
+    let total_staked_balance: U128 = main_contract.view("get_total_staked_balance").await?.json()?;
+    assert!(
+        total_staked_balance.0 > total_staked_balance_before.0,
+        "Total staked amount is not correct after fast forwarding"
+    );
+    println!("Total staked balance increased by: {}", total_staked_balance.0 - total_staked_balance_before.0);
+
+    // Check that both user's staked balance has increased
+    let alice_staked_balance: U128 = main_contract
+        .view("get_user_staked_bal")
+        .args_json(serde_json::json!({"account_id": alice.id()}))
+        .await?.json()?;
+    assert!(
+        alice_staked_balance > alice_second_staked_balance,
+        "Alice's staked balance has not increased after second stake swap"
+    );
+    println!("Alice's staked balance increased by: {}", alice_staked_balance.0 - alice_second_staked_balance.0);
+
+    let bob_staked_balance: U128 = main_contract
+        .view("get_user_staked_bal")
+        .args_json(serde_json::json!({"account_id": bob.id()}))
+        .await?.json()?;
+    assert!(
+        bob_staked_balance > bob_second_staked_balance,
+        "Bob's staked balance has not increased after second stake swap"
+    );
+    println!("Bob's staked balance increased by: {}", bob_staked_balance.0 - bob_second_staked_balance.0);
+
+    // Check that the balance of the swap caller has increased
+    let balance = ft_balance_of(&vex_token_contract, alice.id()).await?;
+    assert!(
+        balance.0 > balance_before.0,
+        "Balance of the swap caller is not correct after fast forwarding"
+    );
+    println!("Balance of the swap caller increased by: {}", balance.0 - balance_before.0);
 
     Ok(())
 }

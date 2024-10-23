@@ -178,8 +178,8 @@ impl TestSetup {
                 "treasury": admin.id(), 
                 "ref_contract": ref_contract.id(),
                 "ref_pool_id": "0",
-                "rewards_period": "120000000000", // 2 minute
-                "unstake_time_buffer": "60000000000", // 1 minute
+                "rewards_period": "60000000000", // 1 minute
+                "unstake_time_buffer": "30000000000", // 30 seconds
                 "min_swap_amount": "1000000", // 1 USDC
             }))
             .transact()

@@ -25,15 +25,8 @@ impl Contract {
 
         // Peform stake swap so rewards are distributed at the timestamp of the
         // match being added to the list so extra rewards are not distributed
-        self.perform_stake_swap();
-
-        self.usdc_staking_rewards = U128(self.usdc_staking_rewards.0 + usdc_for_staking);
-
-        // Add to staking rewards queue
-        let match_stake_info = MatchStakeInfo {
-            staking_rewards: U128(usdc_for_staking),
-            stake_end_time: U64(env::block_timestamp() + self.rewards_period),
-        };
-        self.staking_rewards_queue.push_back(match_stake_info);
+        // the usdc_for_staking will be added to the total and the queue 
+        // in this call also 
+        self.perform_stake_swap_internal(U128(usdc_for_staking));
     }
 }

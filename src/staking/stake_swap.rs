@@ -1,4 +1,4 @@
-use near_sdk::{env, near, require, Gas, NearToken, PromiseError, log};
+use near_sdk::{env, near, require, Gas, NearToken, PromiseError};
 
 pub use crate::ext::*;
 use crate::*;
@@ -12,38 +12,52 @@ impl Contract {
             "You need to attach 300 TGas"
         );
 
+        self.perform_stake_swap_internal(U128(0));
+    }
+
+    pub(crate) fn perform_stake_swap_internal(&mut self, extra_usdc_for_staking: U128) {
+
         let previous_timestamp = self.last_stake_swap_timestamp;
 
         // If the staking queue is empty then skip and update the last stake swap timestamp
         if self.staking_rewards_queue.is_empty() {
             self.last_stake_swap_timestamp = U64(env::block_timestamp());
+
+            if extra_usdc_for_staking.0 > 0 {
+                let new_match_stake_info = MatchStakeInfo {
+                    staking_rewards: extra_usdc_for_staking,
+                    stake_end_time: U64(env::block_timestamp() + self.rewards_period),
+                };
+    
+                self.staking_rewards_queue.push_back(new_match_stake_info);
+                self.usdc_staking_rewards = U128(self.usdc_staking_rewards.0 + extra_usdc_for_staking.0);
+            }
+
             return;
         }
 
         // Get time passed since last stake swap
         let time_passed = env::block_timestamp() - self.last_stake_swap_timestamp.0;
-
         // Check if the first item in staking rewards queue has expired
         // repeat until the first item in the queue has not expired
         // if expired remove and calculate rewards
         // save matches to remove and rewards to remove for later use in callback
         let mut finished_matches_rewards: u128 = 0;
-        let mut new_usdc_staking_rewards: u128 = self.usdc_staking_rewards.0;
+        let mut new_usdc_staking_rewards = self.usdc_staking_rewards.0;
         let mut num_to_pop: u16 = 0;
-        while let Some(first) = self.staking_rewards_queue.front() {
-            if first.stake_end_time.0 < env::block_timestamp() {
+        for i in self.staking_rewards_queue.iter() {
+            if i.stake_end_time.0 < env::block_timestamp() {
                 let finished_match_time_passed =
-                    first.stake_end_time.0 - self.last_stake_swap_timestamp.0;
+                    i.stake_end_time.0 - self.last_stake_swap_timestamp.0;
 
                 // Get rewards for this match has passed
                 let passed_match_reward = (U256::from(finished_match_time_passed)
-                    * U256::from(first.staking_rewards.0)
+                    * U256::from(i.staking_rewards.0)
                     / U256::from(self.rewards_period))
                 .as_u128();
 
                 finished_matches_rewards += passed_match_reward;
-
-                new_usdc_staking_rewards -= first.staking_rewards.0;
+                new_usdc_staking_rewards -= i.staking_rewards.0;
                 num_to_pop += 1;
             } else {
                 break;
@@ -86,6 +100,7 @@ impl Contract {
                         U128(new_usdc_staking_rewards),
                         previous_timestamp,
                         caller,
+                        extra_usdc_for_staking
                     ),
             );
     }
@@ -99,6 +114,7 @@ impl Contract {
         new_usdc_staking_rewards: U128,
         previous_timestamp: U64,
         caller: AccountId,
+        extra_usdc_for_staking: U128,
     ) {
         // If the call to ref finance failed then revert the state
         if call_result.is_err() {
@@ -108,12 +124,22 @@ impl Contract {
 
         let amount_deposited = call_result.unwrap();
 
-        // Set the new staking rewards since some matches have expired
-        self.usdc_staking_rewards = new_usdc_staking_rewards;
+        // Set the new staking rewards since some matches have expired and we may have added extra from handle_profit
+        self.usdc_staking_rewards = U128(new_usdc_staking_rewards.0 + extra_usdc_for_staking.0);
 
         // Remove the finished matches from the queue
         for _ in 0..num_to_pop {
             self.staking_rewards_queue.pop_front();
+        }
+
+        // Add the new staking rewards to the queue
+        if extra_usdc_for_staking.0 > 0 {
+            let new_match_stake_info = MatchStakeInfo {
+                staking_rewards: extra_usdc_for_staking,
+                stake_end_time: U64(env::block_timestamp() + self.rewards_period),
+            };
+
+            self.staking_rewards_queue.push_back(new_match_stake_info);
         }
 
         let action = create_swap_args(
@@ -146,7 +172,6 @@ impl Contract {
         #[callback_result] call_result: Result<U128, PromiseError>,
         caller: AccountId,
     ) {
-        log!("Ref profit swap callback");
         let amount_swapped = call_result.unwrap_or_else(|_| panic!("Swap in ref finance failed"));
 
         // Call to ref finance to withdraw the VEX that was swapped into
@@ -171,14 +196,13 @@ impl Contract {
         #[callback_result] call_result: Result<U128, PromiseError>,
         caller: AccountId,
     ) {
-        log!("Ref profit withdraw callback");
         let amount_withdrawn =
             call_result.unwrap_or_else(|_| panic!("Withdraw from ref finance failed"));
 
         // Reward the initial caller for some amount of VEX
         let passed_match_reward = (U256::from(amount_withdrawn.0) / U256::from(100)).as_u128();
 
-        ft_contract::ext(self.usdc_token_contract.clone())
+        ft_contract::ext(self.vex_token_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
             .ft_transfer(caller, U128(passed_match_reward));
