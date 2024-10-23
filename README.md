@@ -23,7 +23,7 @@ If you need any help with this please don't hesitate to ask for help.
 
 # Admin 
 
-- The admin is set to vexsharedaccount.testnet with private key ed25519:3qB3Gehv1iuEXqjHRLm36HmHC7ZCKaQJfxFQFirUVjaBSXiohv4as6NtSQJmi86SoNXDaC2QR8mKFcCd52JPzeCB 
+- The admin is set to vexsharedaccount.testnet, ask Owen for private key
 
 # Flow
 
