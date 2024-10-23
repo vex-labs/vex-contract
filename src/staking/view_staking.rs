@@ -1,20 +1,13 @@
 use crate::*;
 
-use near_sdk::require;
-
 #[near]
 impl Contract {
     // Get $VEX staking balance for a user if they were to unstake now
     pub fn get_user_staked_bal(&self, account_id: AccountId) -> U128 {
-        let relevant_account = self
-            .users_stake
-            .get(&account_id)
-            .unwrap_or_else(|| panic!("You do not have any stake"));
-
-        require!(
-            relevant_account.stake_shares.0 > 0,
-            "You do not have any stake"
-        );
+        let relevant_account = match self.users_stake.get(&account_id) {
+            Some(account) => account,
+            None => return U128(0),
+        };
 
         U128(self.staked_amount_from_num_shares_rounded_down(relevant_account.stake_shares.0))
     }

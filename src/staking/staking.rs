@@ -175,7 +175,7 @@ impl Contract {
         }
 
         // Transfer the amount of VEX to the user
-        ft_contract::ext(self.usdc_token_contract.clone())
+        ft_contract::ext(self.vex_token_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
             .ft_transfer(account_id, amount);
