@@ -24,7 +24,7 @@ impl Contract {
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
             .get_return_by_output(
-                2197,
+                self.ref_pool_id,
                 self.vex_token_contract.clone(),
                 difference,
                 self.usdc_token_contract.clone(),
@@ -81,6 +81,9 @@ impl Contract {
         // Set the insurance fund to zero as it will all be used
         self.insurance_fund = U128(0);
 
+        // Remove the amount of VEX deposited from the total staked balance
+        self.total_staked_balance = U128(self.total_staked_balance.0 - amount_deposited.0);
+
         let action = create_swap_args(
             self.ref_pool_id,
             self.vex_token_contract.clone(),
@@ -92,6 +95,7 @@ impl Contract {
         // Call to ref finance to swap the deposited VEX for USDC
         // Callback to ref_loss_swap_callback
         // If this call fails there will be VEX funds locked in ref finance
+        // also state will have been changed so 
         // we will implement a function to carry on the swap from this point
         ref_contract::ext(self.ref_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
@@ -111,7 +115,7 @@ impl Contract {
         #[callback_result] call_result: Result<U128, PromiseError>,
         difference: U128,
     ) {
-        let amount_swapped = call_result.unwrap_or_else(|_| panic!("Swap in ref finance failed"));
+        let amount_swapped_for = call_result.unwrap_or_else(|_| panic!("Swap in ref finance failed"));
 
         // Call to ref finance to withdraw the USDC that was swapped into
         // Callback to ref_loss_withdraw_callback
@@ -120,7 +124,7 @@ impl Contract {
         ref_contract::ext(self.ref_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
-            .withdraw(self.usdc_token_contract.clone(), amount_swapped)
+            .withdraw(self.usdc_token_contract.clone(), amount_swapped_for)
             .then(
                 Self::ext(env::current_account_id())
                     .with_static_gas(Gas::from_tgas(100))

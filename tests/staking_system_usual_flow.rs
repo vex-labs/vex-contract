@@ -1,8 +1,8 @@
-// TODO: Make these tests acutually good and comprehensive, calculate and check exact or at least rounded balances
+// TODO: Make these tests acutually good and comprehensive, add proper variable names and comments, calculate and check exact or at least rounded balances
 // Maybe merge with other tests
 
-use near_sdk::json_types::{U128, U64};
-use vex_contracts::{MatchStakeInfo, Team, UserStake};
+use near_sdk::json_types::U128;
+use vex_contracts::{MatchStakeInfo, Team};
 use vex_contracts::ft_on_transfer::FtTransferAction;
 mod setup;
 use crate::setup::*;
@@ -423,33 +423,33 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
     );
 
     // Check that the total staked balance has increased
-    let total_staked_balance: U128 = main_contract.view("get_total_staked_balance").await?.json()?;
+    let total_staked_balance_three: U128 = main_contract.view("get_total_staked_balance").await?.json()?;
     assert!(
-        total_staked_balance.0 > total_staked_balance_before.0,
+        total_staked_balance_three.0 > total_staked_balance_before.0,
         "Total staked amount is not correct after fast forwarding"
     );
-    println!("Total staked balance increased by: {}", total_staked_balance.0 - total_staked_balance_before.0);
+    println!("Total staked balance increased by: {}", total_staked_balance_three.0 - total_staked_balance_before.0);
 
     // Check that both user's staked balance has increased
-    let alice_staked_balance: U128 = main_contract
+    let alice_third_staked_balance: U128 = main_contract
         .view("get_user_staked_bal")
         .args_json(serde_json::json!({"account_id": alice.id()}))
         .await?.json()?;
     assert!(
-        alice_staked_balance > alice_second_staked_balance,
+        alice_third_staked_balance > alice_second_staked_balance,
         "Alice's staked balance has not increased after second stake swap"
     );
-    println!("Alice's staked balance increased by: {}", alice_staked_balance.0 - alice_second_staked_balance.0);
+    println!("Alice's staked balance increased by: {}", alice_third_staked_balance.0 - alice_second_staked_balance.0);
 
-    let bob_staked_balance: U128 = main_contract
+    let bob_third_staked_balance: U128 = main_contract
         .view("get_user_staked_bal")
         .args_json(serde_json::json!({"account_id": bob.id()}))
         .await?.json()?;
     assert!(
-        bob_staked_balance > bob_second_staked_balance,
+        bob_third_staked_balance > bob_second_staked_balance,
         "Bob's staked balance has not increased after second stake swap"
     );
-    println!("Bob's staked balance increased by: {}", bob_staked_balance.0 - bob_second_staked_balance.0);
+    println!("Bob's staked balance increased by: {}", bob_third_staked_balance.0 - bob_second_staked_balance.0);
 
     // Check that the balance of the swap caller has increased
     let balance = ft_balance_of(&vex_token_contract, alice.id()).await?;
@@ -458,6 +458,105 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
         "Balance of the swap caller is not correct after fast forwarding"
     );
     println!("Balance of the swap caller increased by: {}", balance.0 - balance_before.0);
+
+    // Now look at loss scenario with more than insurance fund 
+    
+    // Create a new match
+    result = admin
+        .call(main_contract.id(), "create_match")
+        .args_json(serde_json::json!({"game": "DOTA2", "team_1": "OG", "team_2": "FNATIC", "in_odds_1": 2.0, "in_odds_2": 1.1, "date": "20/08/2024"}))
+        .transact()
+        .await?;
+
+    assert!(result.is_success(), "Admin failed to create a match");
+
+    // Alice places a bet of 30 USDC on the winning team
+    result = ft_transfer_call(
+        alice.clone(),
+        usdc_token_contract.id(),
+        main_contract.id(),
+        U128(30 * ONE_USDC),
+        serde_json::json!({"Bet" : {"match_id": "OG-FNATIC-20/08/2024", "team": Team::Team1}}).to_string(),
+    )
+    .await?;
+
+    assert!(
+        result.is_success(),
+        "ft_transfer_call failed on Alice's third bet"
+    );
+
+    // Bob places a bet of 10 USDC on the losing team
+    result = ft_transfer_call(
+        bob.clone(),
+        usdc_token_contract.id(),
+        main_contract.id(),
+        U128(10 * ONE_USDC),
+        serde_json::json!({"Bet" : {"match_id": "OG-FNATIC-20/08/2024", "team": Team::Team2}}).to_string(),
+    )
+    .await?;
+
+    assert!(
+        result.is_success(),
+        "ft_transfer_call failed on Bob's third bet"
+    );
+
+    // End betting
+    result = end_betting(admin.clone(), main_contract.id(), "OG-FNATIC-20/08/2024").await?;
+
+    assert!(result.is_success(), "Admin failed to end betting");
+
+    // Finish match
+    result = finish_match(
+        admin.clone(),
+        main_contract.id(),
+        "OG-FNATIC-20/08/2024",
+        Team::Team1,
+    )
+    .await?;
+
+    assert!(result.is_success(), "Admin failed to finish the match");
+
+    // Check that the insurance fund balance has decreased
+    // not to zero because excess is added from the swap
+    let insurance_pool: U128 = main_contract.view("get_insurance_fund").await?.json()?;
+    assert!(
+        insurance_pool.0 < 10 * ONE_USDC,
+        "Insurance pool is not correct after the loss match has finished"
+    );
+
+    // Check that the total vex staked balance has decreased
+    let new_total_staked_balance: U128 = main_contract.view("get_total_staked_balance").await?.json()?;
+    assert!(
+        new_total_staked_balance.0 < total_staked_balance_three.0,
+        "Total staked amount is not correct after the loss match has finished"
+    );
+    println!("Total staked balance decreased by: {}", total_staked_balance_three.0 - new_total_staked_balance.0);
+
+    // Check that both user's staked balance has decreased
+    let alice_fourth_staked_balance: U128 = main_contract
+        .view("get_user_staked_bal")
+        .args_json(serde_json::json!({"account_id": alice.id()}))
+        .await?.json()?;
+    assert!(
+        alice_fourth_staked_balance < alice_third_staked_balance,
+        "Alice's staked balance has not decreased after loss match"
+    );
+    println!("Alice's staked balance decreased by: {}", alice_third_staked_balance.0 - alice_fourth_staked_balance.0);
+
+    let bob_fourth_staked_balance: U128 = main_contract
+        .view("get_user_staked_bal")
+        .args_json(serde_json::json!({"account_id": bob.id()}))
+        .await?.json()?;
+    assert!(
+        bob_fourth_staked_balance < bob_third_staked_balance,
+        "Bob's staked balance has not decreased after loss match"
+    );
+    println!("Bob's staked balance decreased by: {}", bob_third_staked_balance.0 - bob_fourth_staked_balance.0);
+    
+    // Alice unstakes and withdraws all her VEX
+
+
+    // Bob unstakes and withdraws some of his VEX
 
     Ok(())
 }

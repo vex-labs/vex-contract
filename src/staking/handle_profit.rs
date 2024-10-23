@@ -1,4 +1,4 @@
-use near_sdk::{env, near, Gas, NearToken};
+use near_sdk::{near, Gas, NearToken};
 
 pub use crate::ext::*;
 use crate::*;
