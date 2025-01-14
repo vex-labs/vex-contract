@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::{IterableMap, LookupMap};
-use near_sdk::{near, AccountId, PanicOnDefault};
+use near_sdk::{near, AccountId, PanicOnDefault, BorshStorageKey};
 use uint::construct_uint;
 
 pub mod admin;
@@ -10,6 +10,16 @@ pub mod betting;
 pub mod ext;
 pub mod ft_on_transfer;
 pub mod staking;
+
+#[derive(BorshStorageKey)]
+#[near]
+pub enum StorageKey {
+    Matches,           // For the `matches` map
+    BetsByUser,        // For the `bets_by_user` map
+    UsersStake,        // For the `users_stake` map
+    StakingRewards,    // For the `staking_rewards_queue` deque
+    Funds,             // For various funds like `fees_fund`, `insurance_fund`, etc.
+}
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
@@ -238,10 +248,10 @@ impl Contract {
             treasury,
             ref_contract,
             ref_pool_id: ref_pool_id.0,
-            matches: IterableMap::new(b"m"),
-            bets_by_user: LookupMap::new(b"u"),
+            matches: IterableMap::new(StorageKey::Matches),
+            bets_by_user: LookupMap::new(StorageKey::BetsByUser),
             last_bet_id: U64(0),
-            users_stake: LookupMap::new(b"s"),
+            users_stake: LookupMap::new(StorageKey::UsersStake),
             staking_rewards_queue: VecDeque::new(),
             usdc_staking_rewards: U128(0),
             last_stake_swap_timestamp: U64(0),
