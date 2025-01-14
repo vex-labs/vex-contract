@@ -29,7 +29,8 @@ async fn test_wrong_ft() -> Result<(), Box<dyn std::error::Error>> {
         usdc_token_contract.id(),
         main_contract.id(),
         U128(10 * ONE_USDC),
-        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}}).to_string(),
+        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}})
+            .to_string(),
     )
     .await?;
 

@@ -95,7 +95,7 @@ impl Contract {
         // Call to ref finance to swap the deposited VEX for USDC
         // Callback to ref_loss_swap_callback
         // If this call fails there will be VEX funds locked in ref finance
-        // also state will have been changed so 
+        // also state will have been changed so
         // we will implement a function to carry on the swap from this point
         ref_contract::ext(self.ref_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
@@ -115,7 +115,8 @@ impl Contract {
         #[callback_result] call_result: Result<U128, PromiseError>,
         difference: U128,
     ) {
-        let amount_swapped_for = call_result.unwrap_or_else(|_| panic!("Swap in ref finance failed"));
+        let amount_swapped_for =
+            call_result.unwrap_or_else(|_| panic!("Swap in ref finance failed"));
 
         // Call to ref finance to withdraw the USDC that was swapped into
         // Callback to ref_loss_withdraw_callback

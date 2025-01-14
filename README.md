@@ -39,6 +39,23 @@ If you need any help with this please don't hesitate to ask for help.
 
 - If there is a problem with a match the admin calls `cancel_match` between stages 1) and 3).
 
+## User Staking Flow
+1) A user calls `ft_transfer_call` on the VEX contract which calls `ft_on_transfer` on the contract, with the message `Stake` to despoit VEX into the contract.
+2) The user calls `stake` or `stake_all` to stake their VEX.
+3) The user calls `unstake` or `unstake_all` to unstake their VEX.
+4) The user calls `withdraw` or `withdraw_all` to withdraw their VEX.
+
+
+## Contract Staking Flow
+1) When the admin calls `finish_match` the game either resulted in a profit or a loss.
+In the case of profit:
+    1) The profit is added to the rewards queue.
+    2) When the rewards have built up enough anyone calls `perform_stake_swap` to swap the rewards for VEX and distribute them to the users.
+In the case of loss: 
+    1) The insurance fund is used to cover the loss if possible, if not then VEX is sold to cover the loss.
+
+From this point on the docs have not been updated to reflect the addition of the staking system. The main changes to add the staking system can be found [HERE](https://github.com/vex-labs/vex-contract/commit/e7ba1596212c9e09ea282bb7438350781046ebf6#diff-2a76032456d2f72cc6b25681ab39f258aca3ec14dc2035f1cd103cef599dd519L17)
+
 # Methods
 
 ## Change Methods
