@@ -44,8 +44,8 @@ impl TestSetup {
         // Set up new account for treasury
 
         // Deploy contract
-        // let contract_wasm = near_workspaces::compile_project("./").await?;
-        let contract_wasm = std::fs::read("./target/wasm32-unknown-unknown/release/vex_contracts.wasm")?;
+        let contract_wasm = near_workspaces::compile_project("./").await?;
+        // let contract_wasm = std::fs::read("./target/wasm32-unknown-unknown/release/vex_contracts.wasm")?;
         let main_contract = main_contract_account.deploy(&contract_wasm).await?.unwrap();
 
         // Deploy USDC token contract
