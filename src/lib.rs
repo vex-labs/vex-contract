@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::{IterableMap, LookupMap};
-use near_sdk::{near, AccountId, PanicOnDefault, BorshStorageKey};
+use near_sdk::{near, AccountId, BorshStorageKey, PanicOnDefault};
 use uint::construct_uint;
 
 pub mod admin;
@@ -14,11 +14,11 @@ pub mod staking;
 #[derive(BorshStorageKey)]
 #[near]
 pub enum StorageKey {
-    Matches,           // For the `matches` map
-    BetsByUser,        // For the `bets_by_user` map
-    UsersStake,        // For the `users_stake` map
-    StakingRewards,    // For the `staking_rewards_queue` deque
-    Funds,             // For various funds like `fees_fund`, `insurance_fund`, etc.
+    Matches,
+    BetsByUser,
+    UsersStake,
+    StakingRewards,
+    Funds,
 }
 
 #[near(contract_state)]
@@ -86,7 +86,7 @@ pub struct Contract {
 
     // The buffer time in nanoseconds before a user unstake since last staking, default is one week - 604_800_000_000_000
     pub unstake_time_buffer: u64,
-    
+
     // The minimum amount of rewards required to be able to swap, default is 100 USDC - 100_000_000
     pub min_swap_amount: u128,
 }

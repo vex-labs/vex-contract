@@ -47,7 +47,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         usdc_token_contract.id(),
         main_contract.id(),
         U128(10 * ONE_USDC),
-        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}}).to_string(),
+        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}})
+            .to_string(),
     )
     .await?;
 
@@ -97,7 +98,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         usdc_token_contract.id(),
         main_contract.id(),
         U128(5 * ONE_USDC),
-        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team2}}).to_string(),
+        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team2}})
+            .to_string(),
     )
     .await?;
 
@@ -147,7 +149,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         usdc_token_contract.id(),
         main_contract.id(),
         U128(2 * ONE_USDC),
-        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}}).to_string(),
+        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}})
+            .to_string(),
     )
     .await?;
 
@@ -181,7 +184,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         usdc_token_contract.id(),
         main_contract.id(),
         U128(10 * ONE_USDC),
-        serde_json::json!({"Bet" : {"match_id": "Furia-Nexus-17/08/2024", "team": Team::Team1}}).to_string(),
+        serde_json::json!({"Bet" : {"match_id": "Furia-Nexus-17/08/2024", "team": Team::Team1}})
+            .to_string(),
     )
     .await?;
 
@@ -218,7 +222,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         usdc_token_contract.id(),
         main_contract.id(),
         U128((0.5 * ONE_USDC as f64) as u128),
-        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}}).to_string(),
+        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}})
+            .to_string(),
     )
     .await?;
 
@@ -282,7 +287,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         usdc_token_contract.id(),
         main_contract.id(),
         U128(10 * ONE_USDC),
-        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}}).to_string(),
+        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}})
+            .to_string(),
     )
     .await?;
 
@@ -354,7 +360,8 @@ async fn test_usual_flow() -> Result<(), Box<dyn std::error::Error>> {
         usdc_token_contract.id(),
         main_contract.id(),
         U128(10 * ONE_USDC),
-        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}}).to_string(),
+        serde_json::json!({"Bet" : {"match_id": "RUBY-Nexus-17/08/2024", "team": Team::Team1}})
+            .to_string(),
     )
     .await?;
 
