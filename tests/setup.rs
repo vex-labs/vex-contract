@@ -4,9 +4,9 @@
 use near_sdk::json_types::{U128, U64};
 use near_sdk::{AccountId, Gas, NearToken};
 use near_workspaces::error::Error;
+use near_workspaces::network::Sandbox;
 use near_workspaces::result::ExecutionFinalResult;
 use near_workspaces::{Account, Contract, Result, Worker};
-use near_workspaces::network::Sandbox;
 use serde_json::json;
 use vex_contracts::Team;
 
@@ -44,8 +44,8 @@ impl TestSetup {
         // Set up new account for treasury
 
         // Deploy contract
-        // let contract_wasm = near_workspaces::compile_project("./").await?;
-        let contract_wasm = std::fs::read("./target/wasm32-unknown-unknown/release/vex_contracts.wasm")?;
+        let contract_wasm = near_workspaces::compile_project("./").await?;
+        // let contract_wasm = std::fs::read("./target/wasm32-unknown-unknown/release/vex_contracts.wasm")?;
         let main_contract = main_contract_account.deploy(&contract_wasm).await?.unwrap();
 
         // Deploy USDC token contract
@@ -172,10 +172,10 @@ impl TestSetup {
         res = main_contract
             .call("init")
             .args_json(serde_json::json!({
-                "admin": admin.id(), 
-                "usdc_token_contract": ft_contract_id, 
-                "vex_token_contract": vex_token_contract.id(), 
-                "treasury": admin.id(), 
+                "admin": admin.id(),
+                "usdc_token_contract": ft_contract_id,
+                "vex_token_contract": vex_token_contract.id(),
+                "treasury": admin.id(),
                 "ref_contract": ref_contract.id(),
                 "ref_pool_id": "0",
                 "rewards_period": "60000000000", // 1 minute
@@ -208,7 +208,10 @@ impl TestSetup {
             .transact()
             .await?;
 
-        assert!(res.is_success(), "Failed to register main contract in ref contract");
+        assert!(
+            res.is_success(),
+            "Failed to register main contract in ref contract"
+        );
 
         res = ref_contract
             .call("storage_deposit")
@@ -227,7 +230,10 @@ impl TestSetup {
             .transact()
             .await?;
 
-        assert!(res.is_success(), "Failed to register tokens in ref contract for main contract");
+        assert!(
+            res.is_success(),
+            "Failed to register tokens in ref contract for main contract"
+        );
 
         res = admin
             .call(ref_contract.id(), "register_tokens")
@@ -236,13 +242,30 @@ impl TestSetup {
             .transact()
             .await?;
 
-        assert!(res.is_success(), "Failed to register tokens in ref contract for admin");
+        assert!(
+            res.is_success(),
+            "Failed to register tokens in ref contract for admin"
+        );
 
         // Add liquidity to ref pool
-        res = ft_transfer_call(admin.clone(), usdc_token_contract.id(), ref_contract.id(), U128(500_000 * ONE_USDC), "".to_string()).await?;
+        res = ft_transfer_call(
+            admin.clone(),
+            usdc_token_contract.id(),
+            ref_contract.id(),
+            U128(500_000 * ONE_USDC),
+            "".to_string(),
+        )
+        .await?;
         assert!(res.is_success(), "Failed to add USDC liquidity to ref pool");
 
-        res = ft_transfer_call(admin.clone(), vex_token_contract.id(), ref_contract.id(), U128(25_000_000 * ONE_VEX) , "".to_string()).await?;
+        res = ft_transfer_call(
+            admin.clone(),
+            vex_token_contract.id(),
+            ref_contract.id(),
+            U128(25_000_000 * ONE_VEX),
+            "".to_string(),
+        )
+        .await?;
         assert!(res.is_success(), "Failed to add VEX liquidity to ref pool");
 
         res = admin
@@ -462,7 +485,7 @@ pub async fn unstake_all(
 ) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
     let unstake = account
         .call(main_contract_id, "unstake_all")
-        .gas(Gas::from_tgas(50)) 
+        .gas(Gas::from_tgas(50))
         .transact()
         .await?;
 

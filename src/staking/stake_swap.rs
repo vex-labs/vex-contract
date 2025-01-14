@@ -16,7 +16,6 @@ impl Contract {
     }
 
     pub(crate) fn perform_stake_swap_internal(&mut self, extra_usdc_for_staking: U128) {
-
         let previous_timestamp = self.last_stake_swap_timestamp;
 
         // If the staking queue is empty then skip and update the last stake swap timestamp
@@ -28,9 +27,10 @@ impl Contract {
                     staking_rewards: extra_usdc_for_staking,
                     stake_end_time: U64(env::block_timestamp() + self.rewards_period),
                 };
-    
+
                 self.staking_rewards_queue.push_back(new_match_stake_info);
-                self.usdc_staking_rewards = U128(self.usdc_staking_rewards.0 + extra_usdc_for_staking.0);
+                self.usdc_staking_rewards =
+                    U128(self.usdc_staking_rewards.0 + extra_usdc_for_staking.0);
             }
 
             return;
@@ -100,7 +100,7 @@ impl Contract {
                         U128(new_usdc_staking_rewards),
                         previous_timestamp,
                         caller,
-                        extra_usdc_for_staking
+                        extra_usdc_for_staking,
                     ),
             );
     }
