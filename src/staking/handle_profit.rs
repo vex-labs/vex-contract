@@ -25,8 +25,8 @@ impl Contract {
 
         // Peform stake swap so rewards are distributed at the timestamp of the
         // match being added to the list so extra rewards are not distributed
-        // the usdc_for_staking will be added to the total and the queue 
-        // in this call also 
+        // the usdc_for_staking will be added to the total and the queue
+        // in this call also
         self.perform_stake_swap_internal(U128(usdc_for_staking));
     }
 }

@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::{IterableMap, LookupMap};
-use near_sdk::{near, AccountId, PanicOnDefault};
+use near_sdk::{near, AccountId, BorshStorageKey, PanicOnDefault};
 use uint::construct_uint;
 
 pub mod admin;
@@ -10,6 +10,16 @@ pub mod betting;
 pub mod ext;
 pub mod ft_on_transfer;
 pub mod staking;
+
+#[derive(BorshStorageKey)]
+#[near]
+pub enum StorageKey {
+    Matches,
+    BetsByUser,
+    UsersStake,
+    StakingRewards,
+    Funds,
+}
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
@@ -76,7 +86,7 @@ pub struct Contract {
 
     // The buffer time in nanoseconds before a user unstake since last staking, default is one week - 604_800_000_000_000
     pub unstake_time_buffer: u64,
-    
+
     // The minimum amount of rewards required to be able to swap, default is 100 USDC - 100_000_000
     pub min_swap_amount: u128,
 }
@@ -238,10 +248,10 @@ impl Contract {
             treasury,
             ref_contract,
             ref_pool_id: ref_pool_id.0,
-            matches: IterableMap::new(b"m"),
-            bets_by_user: LookupMap::new(b"u"),
+            matches: IterableMap::new(StorageKey::Matches),
+            bets_by_user: LookupMap::new(StorageKey::BetsByUser),
             last_bet_id: U64(0),
-            users_stake: LookupMap::new(b"s"),
+            users_stake: LookupMap::new(StorageKey::UsersStake),
             staking_rewards_queue: VecDeque::new(),
             usdc_staking_rewards: U128(0),
             last_stake_swap_timestamp: U64(0),
