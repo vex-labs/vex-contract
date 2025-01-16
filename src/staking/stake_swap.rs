@@ -6,6 +6,7 @@ use crate::*;
 #[near]
 impl Contract {
     // Swap the USDC staking rewards for VEX
+    // In the frontend this is only calable by those who are registered in the VEX token contract
     pub fn perform_stake_swap(&mut self) -> PromiseOrValue<()> {
         require!(
             env::prepaid_gas() >= Gas::from_tgas(300),
@@ -207,6 +208,8 @@ impl Contract {
         // Reward the initial caller for some amount of VEX
         let passed_match_reward = (U256::from(amount_withdrawn.0) / U256::from(100)).as_u128();
 
+        // They will only be rewarded if they are registered in the VEX token contract
+        // if they are not registered the VEX reward will be locked in the contract
         ft_contract::ext(self.vex_token_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))
