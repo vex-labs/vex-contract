@@ -23,7 +23,7 @@ impl Contract {
         // Send to relevant function based on msg
         match serde_json::from_str(&msg) {
             Ok(FtTransferAction::Stake) => {
-                self.deposit(sender_id, amount);
+                self.stake(sender_id, amount);
             }
             Ok(FtTransferAction::AddUSDC) => {
                 self.add_usdc(amount);

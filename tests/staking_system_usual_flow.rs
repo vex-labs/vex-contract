@@ -2,6 +2,8 @@
 // Check you can't do things you shouldn't be able to do
 // Maybe merge with other tests
 
+// Check that unstake_all deletes the user from the map
+
 use near_sdk::json_types::U128;
 use vex_contracts::ft_on_transfer::FtTransferAction;
 use vex_contracts::{MatchStakeInfo, Team};
