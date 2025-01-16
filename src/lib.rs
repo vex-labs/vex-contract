@@ -11,16 +11,6 @@ pub mod ext;
 pub mod ft_on_transfer;
 pub mod staking;
 
-#[derive(BorshStorageKey)]
-#[near]
-pub enum StorageKey {
-    Matches,
-    BetsByUser,
-    UsersStake,
-    StakingRewards,
-    Funds,
-}
-
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
 pub struct Contract {
@@ -196,6 +186,16 @@ pub struct MatchStakeInfo {
 
     // The timestamp of when rewards will no longer be distributed (a month after the match ends)
     pub stake_end_time: U64,
+}
+
+#[derive(BorshStorageKey)]
+#[near]
+pub enum StorageKey {
+    Matches,
+    BetsByUser,
+    UsersStake,
+    StakingRewards,
+    Funds,
 }
 
 // Construct a 256-bit unsigned integer
