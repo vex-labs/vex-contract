@@ -1,4 +1,4 @@
-use near_sdk::{near, Gas, NearToken};
+use near_sdk::{near, Gas, NearToken, PromiseOrValue};
 
 pub use crate::ext::*;
 use crate::*;
@@ -6,7 +6,7 @@ use crate::*;
 #[near]
 impl Contract {
     // Handles the case when a match finishes and there is a profit
-    pub(crate) fn handle_profit(&mut self, profit: u128) {
+    pub(crate) fn handle_profit(&mut self, profit: u128) -> PromiseOrValue<()> {
         // Calculate how profit is distributed
         let usdc_for_staking = (U256::from(60) * U256::from(profit) / U256::from(100)).as_u128();
         let treasury_rewards = (U256::from(30) * U256::from(profit) / U256::from(100)).as_u128();
@@ -27,6 +27,6 @@ impl Contract {
         // match being added to the list so extra rewards are not distributed
         // the usdc_for_staking will be added to the total and the queue
         // in this call also
-        self.perform_stake_swap_internal(U128(usdc_for_staking));
+        self.perform_stake_swap_internal(U128(usdc_for_staking))
     }
 }
