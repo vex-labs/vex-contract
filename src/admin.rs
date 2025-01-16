@@ -1,4 +1,4 @@
-use near_sdk::{env, near, require, Gas, NearToken};
+use near_sdk::{env, near, require, Gas, NearToken, PromiseOrValue};
 
 pub use crate::ext::*;
 use crate::*;
@@ -85,7 +85,7 @@ impl Contract {
     }
 
     // When a match finishes
-    pub fn finish_match(&mut self, match_id: &MatchId, winner: Team) {
+    pub fn finish_match(&mut self, match_id: &MatchId, winner: Team) -> PromiseOrValue<()> {
         require!(
             env::prepaid_gas() >= Gas::from_tgas(300),
             "You need to attach 300 TGas"
@@ -152,7 +152,7 @@ impl Contract {
         match is_profit {
             true => self.handle_profit(difference),
             false => self.handle_loss(difference),
-        };
+        }
     }
 
     // Cancels a match and puts it in an error state
