@@ -1,8 +1,7 @@
-use std::collections::VecDeque;
-
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::{IterableMap, LookupMap};
 use near_sdk::{near, AccountId, BorshStorageKey, PanicOnDefault};
+use std::collections::VecDeque;
 use uint::construct_uint;
 
 pub mod admin;
@@ -135,6 +134,33 @@ pub struct Bet {
     pub pay_state: Option<PayState>,
 }
 
+#[near(serializers = [json, borsh])]
+pub struct UserStake {
+    // The number of stake shares the user has
+    pub stake_shares: U128,
+
+    // The timestamp of when the user can unstake their VEX
+    pub unstake_timestamp: U64,
+}
+
+impl Default for UserStake {
+    fn default() -> Self {
+        Self {
+            stake_shares: U128(0),
+            unstake_timestamp: U64(0),
+        }
+    }
+}
+
+#[near(serializers = [json, borsh])]
+pub struct MatchStakeInfo {
+    // The USDC profit from the match that is to be distributed
+    pub staking_rewards: U128,
+
+    // The timestamp of when rewards will no longer be distributed (a month after the match ends)
+    pub stake_end_time: U64,
+}
+
 #[derive(PartialEq, Clone)]
 #[near(serializers = [json, borsh])]
 pub enum Team {
@@ -155,37 +181,6 @@ pub enum MatchState {
     Current,
     Finished,
     Error,
-}
-
-#[near(serializers = [json, borsh])]
-pub struct UserStake {
-    // The number of stake shares the user has
-    pub stake_shares: U128,
-
-    // The amount of VEX the user has that is unstaked
-    pub unstaked_balance: U128,
-
-    // The timestamp of when the user can unstake their VEX
-    pub unstake_timestamp: U64,
-}
-
-impl Default for UserStake {
-    fn default() -> Self {
-        Self {
-            stake_shares: U128(0),
-            unstaked_balance: U128(0),
-            unstake_timestamp: U64(0),
-        }
-    }
-}
-
-#[near(serializers = [json, borsh])]
-pub struct MatchStakeInfo {
-    // The USDC profit from the match that is to be distributed
-    pub staking_rewards: U128,
-
-    // The timestamp of when rewards will no longer be distributed (a month after the match ends)
-    pub stake_end_time: U64,
 }
 
 #[derive(BorshStorageKey)]

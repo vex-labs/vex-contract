@@ -152,7 +152,7 @@ impl Contract {
             // In the very rare case that the amount received is less than the difference
             // we will log this and add to the state some amount needs to be added
             log!("URGENT: Need to add funds to the contract!");
-            self.funds_to_add = U128(difference.0 - amount_withdrawn.0);
+            self.funds_to_add = U128(self.funds_to_add.0 + difference.0 - amount_withdrawn.0);
         }
     }
 }
