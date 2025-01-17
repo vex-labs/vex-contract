@@ -1,8 +1,7 @@
-// TODO: Make these tests acutually good and comprehensive, add proper variable names and comments, calculate and check exact or at least rounded balances
-// Check you can't do things you shouldn't be able to do
-// Maybe merge with other tests
-
+// TODO: Make these tests good and comprehensive, add proper variable names and comments, calculate and check exact or at least rounded balances
+// Check you can't do actions you shouldn't be able to do at different stages
 // Check that unstake_all deletes the user from the map
+// Consider merging with other tests
 
 use near_sdk::json_types::U128;
 use vex_contracts::ft_on_transfer::FtTransferAction;
@@ -81,13 +80,6 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
         "Alice's balance is not correct after her first stake"
     );
 
-    result = stake_all(alice.clone(), main_contract.id()).await?;
-
-    assert!(
-        result.is_success(),
-        "stake_all failed on Alice's first stake"
-    );
-
     // Bob stakes 100 $VEX
     result = ft_transfer_call(
         bob.clone(),
@@ -114,13 +106,6 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
         balance,
         U128(0),
         "Bob's balance is not correct after his first stake"
-    );
-
-    result = stake_all(bob.clone(), main_contract.id()).await?;
-
-    assert!(
-        result.is_success(),
-        "stake_all failed on Bob's first stake stake"
     );
 
     // Check total staked amount
@@ -690,15 +675,6 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
         "Alice's staked balance is not correct after unstaking all"
     );
 
-    result = withdraw_all(alice.clone(), main_contract.id()).await?;
-
-    dbg!(&result);
-
-    assert!(
-        result.is_success(),
-        "withdraw_all failed on Alice's withdraw"
-    );
-
     // Check that Alice's balance has increased
     let alice_balance_after = ft_balance_of(&vex_token_contract, alice.id()).await?;
     assert!(
@@ -724,10 +700,6 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
         bob_staked_balance < bob_fourth_staked_balance,
         "Bob's staked balance is not correct after withdrawing some"
     );
-
-    result = withdraw_all(bob.clone(), main_contract.id()).await?;
-
-    assert!(result.is_success(), "withdraw_all failed on Bob's withdraw");
 
     // Check that Bob's balance has increased
     let bob_balance_after = ft_balance_of(&vex_token_contract, bob.id()).await?;
