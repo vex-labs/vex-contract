@@ -1,36 +1,65 @@
 use near_sdk::{env, near, require};
 
+use crate::events::Event;
 use crate::*;
 
 #[near]
 impl Contract {
-    // Depositing VEX tokens for staking
-    pub(crate) fn deposit(&mut self, sender_id: AccountId, amount: U128) {
+    // Staking VEX tokens
+    pub(crate) fn stake(&mut self, sender_id: AccountId, amount: U128) {
         require!(
             env::predecessor_account_id() == self.vex_token_contract,
             "Only VEX can be staked"
         );
 
-        let (stake_shares, unstaked_balance) =
-            self.users_stake.get(&sender_id).map_or((0, 0), |account| {
-                (account.stake_shares.0, account.unstaked_balance.0)
-            });
+        // Get the rounded down number of stake shares
+        let num_shares = self.num_shares_from_staked_amount_rounded_down(amount.0);
 
-        // Require that the user has at least 50 VEX staked or deposited after the deposit
-        let staked_balance = self.staked_amount_from_num_shares_rounded_up(stake_shares);
+        // Get the amount of VEX for the rounded down stake shares
+        let charge_amount = self.staked_amount_from_num_shares_rounded_down(num_shares);
         require!(
-            unstaked_balance + staked_balance + amount.0 >= FIFTY_VEX,
-            "You must keep at least 50 VEX staked or deposited or be withdrawing all"
+            charge_amount > 0,
+            "Invariant violation. Calculated staked amount must be positive, because \"stake\" share price should be at least 1"
+        );
+
+        // Check if the user's staked VEX + the amount they are staking is at least 50
+        let stake_shares = self
+            .users_stake
+            .get(&sender_id)
+            .map_or(0, |account| account.stake_shares.0);
+        let staked_balance = self.staked_amount_from_num_shares_rounded_down(stake_shares);
+        require!(
+            staked_balance + amount.0 >= FIFTY_VEX,
+            "You must stake at least 50 VEX"
         );
 
         // Get the user's stake account or create a new one if it doesn't exist
         let relevant_account = self
             .users_stake
-            .entry(sender_id)
+            .entry(sender_id.clone())
             .or_insert_with(UserStake::default);
 
-        // Update the user's unstaked_balance
-        relevant_account.unstaked_balance = U128(relevant_account.unstaked_balance.0 + amount.0);
+        // Set the unstake timestamp to 1 week from now
+        relevant_account.unstake_timestamp = U64(env::block_timestamp() + self.unstake_time_buffer);
+
+        // Update the user's staked shares balance
+        relevant_account.stake_shares = U128(relevant_account.stake_shares.0 + num_shares);
+
+        // The staked amount that will be added to the total to guarantee the "stake" share price
+        // doesnt decrease when staking because of rounding. The difference between `stake_amount` and `charge_amount` is paid
+        // from the allocated STAKE_SHARE_PRICE_GUARANTEE_FUND.
+        let stake_amount = self.staked_amount_from_num_shares_rounded_up(num_shares);
+
+        // Update aggregate values
+        self.total_staked_balance = U128(self.total_staked_balance.0 + stake_amount);
+        self.total_stake_shares = U128(self.total_stake_shares.0 + num_shares);
+
+        Event::StakeVex {
+            account_id: &sender_id,
+            amount,
+            new_total_staked: self.total_staked_balance,
+        }
+        .emit();
     }
 
     // Add USDC to the contract

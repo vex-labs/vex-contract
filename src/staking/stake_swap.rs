@@ -1,4 +1,4 @@
-use near_sdk::{env, near, require, Gas, NearToken, PromiseError};
+use near_sdk::{env, near, require, Gas, NearToken, PromiseError, PromiseOrValue};
 
 pub use crate::ext::*;
 use crate::*;
@@ -6,16 +6,20 @@ use crate::*;
 #[near]
 impl Contract {
     // Swap the USDC staking rewards for VEX
-    pub fn perform_stake_swap(&mut self) {
+    // In the frontend this is only calable by those who are registered in the VEX token contract
+    pub fn perform_stake_swap(&mut self) -> PromiseOrValue<()> {
         require!(
             env::prepaid_gas() >= Gas::from_tgas(300),
             "You need to attach 300 TGas"
         );
 
-        self.perform_stake_swap_internal(U128(0));
+        self.perform_stake_swap_internal(U128(0))
     }
 
-    pub(crate) fn perform_stake_swap_internal(&mut self, extra_usdc_for_staking: U128) {
+    pub(crate) fn perform_stake_swap_internal(
+        &mut self,
+        extra_usdc_for_staking: U128,
+    ) -> PromiseOrValue<()> {
         let previous_timestamp = self.last_stake_swap_timestamp;
 
         // If the staking queue is empty then skip and update the last stake swap timestamp
@@ -33,7 +37,7 @@ impl Contract {
                     U128(self.usdc_staking_rewards.0 + extra_usdc_for_staking.0);
             }
 
-            return;
+            return PromiseOrValue::Value(());
         }
 
         // Get time passed since last stake swap
@@ -84,25 +88,27 @@ impl Contract {
         // Callback to ref_profit_deposit_callback
         // If this function fails we can call the function again
         // as state is reversed in the callback
-        ft_contract::ext(self.usdc_token_contract.clone())
-            .with_attached_deposit(NearToken::from_yoctonear(1))
-            .with_static_gas(Gas::from_tgas(30))
-            .ft_transfer_call(
-                self.ref_contract.clone(),
-                U128(total_rewards_to_swap),
-                "".to_string(),
-            )
-            .then(
-                Self::ext(env::current_account_id())
-                    .with_static_gas(Gas::from_tgas(220))
-                    .ref_profit_deposit_callback(
-                        num_to_pop,
-                        U128(new_usdc_staking_rewards),
-                        previous_timestamp,
-                        caller,
-                        extra_usdc_for_staking,
-                    ),
-            );
+        PromiseOrValue::Promise(
+            ft_contract::ext(self.usdc_token_contract.clone())
+                .with_attached_deposit(NearToken::from_yoctonear(1))
+                .with_static_gas(Gas::from_tgas(30))
+                .ft_transfer_call(
+                    self.ref_contract.clone(),
+                    U128(total_rewards_to_swap),
+                    "".to_string(),
+                )
+                .then(
+                    Self::ext(env::current_account_id())
+                        .with_static_gas(Gas::from_tgas(220))
+                        .ref_profit_deposit_callback(
+                            num_to_pop,
+                            U128(new_usdc_staking_rewards),
+                            previous_timestamp,
+                            caller,
+                            extra_usdc_for_staking,
+                        ),
+                ),
+        )
     }
 
     // Callback after the deposit to ref finance
@@ -202,6 +208,8 @@ impl Contract {
         // Reward the initial caller for some amount of VEX
         let passed_match_reward = (U256::from(amount_withdrawn.0) / U256::from(100)).as_u128();
 
+        // They will only be rewarded if they are registered in the VEX token contract
+        // if they are not registered the VEX reward will be locked in the contract
         ft_contract::ext(self.vex_token_contract.clone())
             .with_attached_deposit(NearToken::from_yoctonear(1))
             .with_static_gas(Gas::from_tgas(30))

@@ -1,4 +1,4 @@
-use near_sdk::{env, log, near, Gas, NearToken, PromiseError};
+use near_sdk::{env, log, near, Gas, NearToken, PromiseError, PromiseOrValue};
 
 pub use crate::ext::*;
 use crate::*;
@@ -6,34 +6,33 @@ use crate::*;
 #[near]
 impl Contract {
     // Handles the case when a match finishes and there is a loss
-    pub(crate) fn handle_loss(&mut self, loss: u128) {
+    pub(crate) fn handle_loss(&mut self, loss: u128) -> PromiseOrValue<()> {
         // If the loss can be covered by the insurance fund then do so
         if loss < self.insurance_fund.0 {
             self.insurance_fund = U128(self.insurance_fund.0 - loss);
-            return;
+            return PromiseOrValue::Value(());
         }
 
         // Calculate how much more USDC is needed to cover the loss
         let difference = U128(loss - self.insurance_fund.0);
 
-        // Cross contract call to check how much VEX is needed to be sold to cover the difference
-        // callback to ref_loss_view_callback
-        // if this call fails we can call the function again
-        // as no state was changed
-        ref_contract::ext(self.ref_contract.clone())
-            .with_attached_deposit(NearToken::from_yoctonear(1))
-            .with_static_gas(Gas::from_tgas(30))
-            .get_return_by_output(
-                self.ref_pool_id,
-                self.vex_token_contract.clone(),
-                difference,
-                self.usdc_token_contract.clone(),
-            )
-            .then(
-                Self::ext(env::current_account_id())
-                    .with_static_gas(Gas::from_tgas(250))
-                    .ref_loss_view_callback(difference),
-            );
+        // If the promise fails then we need to call the end match function again
+        PromiseOrValue::Promise(
+            ref_contract::ext(self.ref_contract.clone())
+                .with_attached_deposit(NearToken::from_yoctonear(1))
+                .with_static_gas(Gas::from_tgas(30))
+                .get_return_by_output(
+                    self.ref_pool_id,
+                    self.vex_token_contract.clone(),
+                    difference,
+                    self.usdc_token_contract.clone(),
+                )
+                .then(
+                    Self::ext(env::current_account_id())
+                        .with_static_gas(Gas::from_tgas(250))
+                        .ref_loss_view_callback(difference),
+                ),
+        )
     }
 
     // Callback after getting the return from ref finance
@@ -153,7 +152,7 @@ impl Contract {
             // In the very rare case that the amount received is less than the difference
             // we will log this and add to the state some amount needs to be added
             log!("URGENT: Need to add funds to the contract!");
-            self.funds_to_add = U128(difference.0 - amount_withdrawn.0);
+            self.funds_to_add = U128(self.funds_to_add.0 + difference.0 - amount_withdrawn.0);
         }
     }
 }
