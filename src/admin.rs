@@ -1,5 +1,6 @@
-use near_sdk::{env, near, require, Gas, NearToken};
+use near_sdk::{env, near, require, Gas, NearToken, PromiseOrValue};
 
+use crate::events::Event;
 pub use crate::ext::*;
 use crate::*;
 
@@ -7,10 +8,7 @@ use crate::*;
 impl Contract {
     // Changes the admin of the contract
     pub fn change_admin(&mut self, new_admin: AccountId) {
-        require!(
-            env::predecessor_account_id() == self.admin,
-            "Only the admin can call this method"
-        );
+        self.assert_admin();
 
         self.admin = new_admin;
     }
@@ -25,10 +23,7 @@ impl Contract {
         in_odds_2: f64,
         date: String,
     ) {
-        require!(
-            env::predecessor_account_id() == self.admin,
-            "Only the admin can call this method"
-        );
+        self.assert_admin();
 
         let match_id: MatchId = format!("{}-{}-{}", team_1, team_2, date);
 
@@ -61,15 +56,19 @@ impl Contract {
         };
 
         // Insert new match
-        self.matches.insert(match_id, new_match);
+        self.matches.insert(match_id.clone(), new_match);
+
+        Event::NewMatch {
+            match_id,
+            team_1_total_bets,
+            team_2_total_bets,
+        }
+        .emit();
     }
 
     // When a match starts
     pub fn end_betting(&mut self, match_id: &MatchId) {
-        require!(
-            env::predecessor_account_id() == self.admin,
-            "Only the admin can call this method"
-        );
+        self.assert_admin();
 
         let relevant_match = self
             .matches
@@ -82,19 +81,21 @@ impl Contract {
         );
 
         relevant_match.match_state = MatchState::Current;
+
+        Event::EndBetting {
+            match_id: match_id.clone(),
+        }
+        .emit();
     }
 
     // When a match finishes
-    pub fn finish_match(&mut self, match_id: &MatchId, winner: Team) {
+    pub fn finish_match(&mut self, match_id: &MatchId, winner: Team) -> PromiseOrValue<()> {
         require!(
             env::prepaid_gas() >= Gas::from_tgas(300),
             "You need to attach 300 TGas"
         );
 
-        require!(
-            env::predecessor_account_id() == self.admin,
-            "Only the admin can call this method"
-        );
+        self.assert_admin();
 
         let relevant_match = self
             .matches
@@ -148,19 +149,22 @@ impl Contract {
             }
         };
 
+        Event::FinishMatch {
+            match_id: match_id.clone(),
+            winner,
+        }
+        .emit(); // Change this to be emitted after the first callback down both paths
+
         // Send to relevant function to handle profit or loss scenario
         match is_profit {
             true => self.handle_profit(difference),
             false => self.handle_loss(difference),
-        };
+        }
     }
 
     // Cancels a match and puts it in an error state
     pub fn cancel_match(&mut self, match_id: &MatchId) {
-        require!(
-            env::predecessor_account_id() == self.admin,
-            "Only the admin can call this method"
-        );
+        self.assert_admin();
 
         let relevant_match = self
             .matches
@@ -176,14 +180,16 @@ impl Contract {
         );
 
         relevant_match.match_state = MatchState::Error;
+
+        Event::CancelMatch {
+            match_id: match_id.clone(),
+        }
+        .emit();
     }
 
     // Removes an amount of USDC from the fees fund and sends it to the receiver
     pub fn take_from_fees_fund(&mut self, amount: U128, receiver: AccountId) -> U128 {
-        require!(
-            env::predecessor_account_id() == self.admin,
-            "Only the admin can call this method"
-        );
+        self.assert_admin();
 
         require!(
             self.fees_fund >= amount,
@@ -203,10 +209,7 @@ impl Contract {
 
     // Removes an amount of USDC from the insurance fund and sends it to the receiver
     pub fn take_from_insurance_fund(&mut self, amount: U128, receiver: AccountId) -> U128 {
-        require!(
-            env::predecessor_account_id() == self.admin,
-            "Only the admin can call this method"
-        );
+        self.assert_admin();
 
         require!(
             self.insurance_fund >= amount,
@@ -222,5 +225,12 @@ impl Contract {
 
         // Returns how much is left in the insurance fund
         self.insurance_fund
+    }
+
+    pub(crate) fn assert_admin(&self) {
+        require!(
+            env::predecessor_account_id() == self.admin,
+            "Only the admin can call this method"
+        );
     }
 }
