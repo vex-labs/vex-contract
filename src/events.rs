@@ -34,12 +34,12 @@ pub enum Event<'a> {
         amount: U128,
         match_id: MatchId,
         team: Team,
-        potential_winnings: U128, // May need to log the new pool sizes here to display the new odds 
+        potential_winnings: U128, // May need to log the new pool sizes here to display the new odds
     },
     ClaimWinnings {
         account_id: &'a AccountId,
         bet_id: BetId,
-        amount_received: U128, 
+        amount_received: U128,
     },
     ClaimRefund {
         account_id: &'a AccountId,

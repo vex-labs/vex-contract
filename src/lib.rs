@@ -6,10 +6,10 @@ use uint::construct_uint;
 
 pub mod admin;
 pub mod betting;
+pub mod events;
 pub mod ext;
 pub mod ft_on_transfer;
 pub mod staking;
-pub mod events;
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
