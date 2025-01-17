@@ -11,8 +11,8 @@ use serde_json::json;
 use vex_contracts::Team;
 
 const FIFTY_NEAR: NearToken = NearToken::from_near(50);
-const FT_WASM_FILEPATH: &str = "./tests/fungible_token.wasm";
-const REF_WASM_FILEPATH: &str = "./tests/ref_exchange_release.wasm";
+const FT_WASM_FILEPATH: &str = "./tests/external_contracts/fungible_token.wasm";
+const REF_WASM_FILEPATH: &str = "./tests/external_contracts/ref_exchange_release.wasm";
 pub const ONE_USDC: u128 = 1_000_000;
 pub const ONE_VEX: u128 = 1_000_000_000_000_000_000;
 
@@ -437,20 +437,6 @@ pub async fn change_admin(
 }
 
 #[allow(dead_code)]
-pub async fn stake_all(
-    account: Account,
-    main_contract_id: &AccountId,
-) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
-    let stake = account
-        .call(main_contract_id, "stake_all")
-        .gas(Gas::from_tgas(50))
-        .transact()
-        .await?;
-
-    Ok(stake)
-}
-
-#[allow(dead_code)]
 pub async fn perform_stake_swap(
     account: Account,
     main_contract_id: &AccountId,
@@ -462,20 +448,6 @@ pub async fn perform_stake_swap(
         .await?;
 
     Ok(swap)
-}
-
-#[allow(dead_code)]
-pub async fn withdraw_all(
-    account: Account,
-    main_contract_id: &AccountId,
-) -> Result<ExecutionFinalResult, Box<dyn std::error::Error>> {
-    let withdraw = account
-        .call(main_contract_id, "withdraw_all")
-        .gas(Gas::from_tgas(50))
-        .transact()
-        .await?;
-
-    Ok(withdraw)
 }
 
 #[allow(dead_code)]
