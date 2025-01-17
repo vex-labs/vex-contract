@@ -1,5 +1,6 @@
 use near_sdk::{env, near, require};
 
+use crate::events::Event;
 use crate::*;
 
 #[near]
@@ -35,7 +36,7 @@ impl Contract {
         // Get the user's stake account or create a new one if it doesn't exist
         let relevant_account = self
             .users_stake
-            .entry(sender_id)
+            .entry(sender_id.clone())
             .or_insert_with(UserStake::default);
 
         // Set the unstake timestamp to 1 week from now
@@ -52,6 +53,13 @@ impl Contract {
         // Update aggregate values
         self.total_staked_balance = U128(self.total_staked_balance.0 + stake_amount);
         self.total_stake_shares = U128(self.total_stake_shares.0 + num_shares);
+
+        Event::StakeVex {
+            account_id: &sender_id,
+            amount,
+            new_total_staked: self.total_staked_balance,
+        }
+        .emit();
     }
 
     // Add USDC to the contract

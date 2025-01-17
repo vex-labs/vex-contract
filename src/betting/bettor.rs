@@ -58,8 +58,8 @@ impl Contract {
 
         // Creates a new bet
         let new_bet = Bet {
-            match_id,
-            team,
+            match_id: match_id.clone(),
+            team: team.clone(),
             bet_amount: amount,
             potential_winnings,
             pay_state: None,
@@ -78,6 +78,16 @@ impl Contract {
         let bets_by_user = self.bets_by_user.get_mut(&sender_id).unwrap();
 
         bets_by_user.insert(self.last_bet_id, new_bet);
+
+        events::Event::Bet {
+            account_id: &sender_id,
+            bet_id: self.last_bet_id,
+            amount,
+            match_id,
+            team,
+            potential_winnings,
+        }
+        .emit();
     }
 
     // Function to claim winnings or refund
@@ -136,7 +146,7 @@ impl Contract {
                     .then(
                         Self::ext(env::current_account_id())
                             .with_static_gas(Gas::from_tgas(50))
-                            .claim_callback(bettor, bet_id),
+                            .claim_callback(bettor, bet_id, relevant_bet.potential_winnings, PayState::Paid),
                     );
 
                 relevant_bet.pay_state = Some(PayState::Paid);
@@ -150,7 +160,7 @@ impl Contract {
                     .then(
                         Self::ext(env::current_account_id())
                             .with_static_gas(Gas::from_tgas(50))
-                            .claim_callback(bettor, bet_id),
+                            .claim_callback(bettor, bet_id, relevant_bet.bet_amount, PayState::RefundPaid),
                     );
                 relevant_bet.pay_state = Some(PayState::RefundPaid);
             }
@@ -164,6 +174,8 @@ impl Contract {
         #[callback_result] call_result: Result<(), PromiseError>,
         bettor: AccountId,
         bet_id: BetId,
+        amount_received: U128,
+        pay_state: PayState,
     ) -> String {
         if call_result.is_err() {
             // Get relevant user
@@ -181,6 +193,26 @@ impl Contract {
 
             return "Failed transfer".to_string();
         }
+
+        match pay_state {
+            PayState::Paid => {
+                events::Event::ClaimWinnings {
+                    account_id: &bettor,
+                    bet_id,
+                    amount_received,
+                }
+                .emit();
+            }
+            PayState::RefundPaid => {
+                events::Event::ClaimRefund {
+                    account_id: &bettor,
+                    bet_id,
+                    amount_received,
+                }
+                .emit();
+            }
+        }
+
         return "Successful transfer".to_string();
     }
 }
