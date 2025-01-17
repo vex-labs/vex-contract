@@ -17,6 +17,7 @@ impl Contract {
         let difference = U128(loss - self.insurance_fund.0);
 
         // Wrap the Promise in PromiseOrValue::Promise
+        // If the promise fails then we need to call the end match function again
         PromiseOrValue::Promise(
             ref_contract::ext(self.ref_contract.clone())
                 .with_attached_deposit(NearToken::from_yoctonear(1))

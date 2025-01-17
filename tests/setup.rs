@@ -11,8 +11,8 @@ use serde_json::json;
 use vex_contracts::Team;
 
 const FIFTY_NEAR: NearToken = NearToken::from_near(50);
-const FT_WASM_FILEPATH: &str = "./tests/external_contracts/fungible_token.wasm";
-const REF_WASM_FILEPATH: &str = "./tests/external_contracts/ref_exchange_release.wasm";
+const FT_WASM_FILEPATH: &str = "./tests/external_contracts_wasm/fungible_token.wasm";
+const REF_WASM_FILEPATH: &str = "./tests/external_contracts_wasm/ref_exchange_release.wasm";
 pub const ONE_USDC: u128 = 1_000_000;
 pub const ONE_VEX: u128 = 1_000_000_000_000_000_000;
 

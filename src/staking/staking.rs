@@ -1,5 +1,6 @@
 use near_sdk::{env, near, require, Gas, NearToken, Promise};
 
+use crate::events::Event;
 pub use crate::ext::*;
 use crate::*;
 
@@ -77,6 +78,14 @@ impl Contract {
         if relevant_account.stake_shares.0 == 0 {
             self.users_stake.remove(&account_id);
         }
+
+
+        Event::UnstakeVex {
+            account_id: &account_id,
+            amount,
+            new_total_staked: self.total_staked_balance,
+        }
+        .emit();
 
         // Transfer the amount of VEX to the user
         ft_contract::ext(self.vex_token_contract.clone())

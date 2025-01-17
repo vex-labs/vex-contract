@@ -9,6 +9,7 @@ pub mod betting;
 pub mod ext;
 pub mod ft_on_transfer;
 pub mod staking;
+pub mod events;
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
@@ -161,7 +162,7 @@ pub struct MatchStakeInfo {
     pub stake_end_time: U64,
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 #[near(serializers = [json, borsh])]
 pub enum Team {
     Team1,
