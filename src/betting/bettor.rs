@@ -146,7 +146,12 @@ impl Contract {
                     .then(
                         Self::ext(env::current_account_id())
                             .with_static_gas(Gas::from_tgas(50))
-                            .claim_callback(bettor, bet_id, relevant_bet.potential_winnings, PayState::Paid),
+                            .claim_callback(
+                                bettor,
+                                bet_id,
+                                relevant_bet.potential_winnings,
+                                PayState::Paid,
+                            ),
                     );
 
                 relevant_bet.pay_state = Some(PayState::Paid);
@@ -160,7 +165,12 @@ impl Contract {
                     .then(
                         Self::ext(env::current_account_id())
                             .with_static_gas(Gas::from_tgas(50))
-                            .claim_callback(bettor, bet_id, relevant_bet.bet_amount, PayState::RefundPaid),
+                            .claim_callback(
+                                bettor,
+                                bet_id,
+                                relevant_bet.bet_amount,
+                                PayState::RefundPaid,
+                            ),
                     );
                 relevant_bet.pay_state = Some(PayState::RefundPaid);
             }

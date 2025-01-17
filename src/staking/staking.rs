@@ -79,7 +79,6 @@ impl Contract {
             self.users_stake.remove(&account_id);
         }
 
-
         Event::UnstakeVex {
             account_id: &account_id,
             amount,
