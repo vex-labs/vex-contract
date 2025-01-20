@@ -19,11 +19,11 @@ If you need any help with this please don't hesitate to ask for help.
 
 # Deployments
 
-- A stable contract (the last release) is deployed at "sexyvexycontract.testnet".
+- A stable contract (the last release) is deployed at "contract.betvex.testnet".
 
 # Admin 
 
-- The admin is set to vexsharedaccount.testnet, ask Owen for private key
+- The admin is set to admin.betvex.testnet, ask Owen for private key
 
 # Events 
 Events are emitted when key methods are called / completed. The list of events and data emitted can be found in the [`events.rs`](./src/events.rs) file.
