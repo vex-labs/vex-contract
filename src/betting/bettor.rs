@@ -13,7 +13,7 @@ impl Contract {
         amount: U128,
         match_id: MatchId,
         team: Team,
-    ) {
+    ) -> U128 {
         require!(
             env::predecessor_account_id() == self.usdc_token_contract,
             "Bets can only be made in USDC"
@@ -88,6 +88,8 @@ impl Contract {
             potential_winnings,
         }
         .emit();
+
+        U128(0)
     }
 
     // Function to claim winnings or refund
