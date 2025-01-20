@@ -101,7 +101,7 @@ impl Contract {
                     Self::ext(env::current_account_id())
                         .with_static_gas(Gas::from_tgas(220))
                         .ref_profit_deposit_callback(
-                            num_to_pop,
+                            num_to_pop, // May need to pop before so it cannot be called again or set something in state so it can't be called
                             U128(new_usdc_staking_rewards),
                             previous_timestamp,
                             caller,

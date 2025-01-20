@@ -1,4 +1,7 @@
 This file contains a list of example commands to be run in near-cli-rs
+
+This is old
+
 Remember to get cusd tokens on your own account
 
 Create account 
