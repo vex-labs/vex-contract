@@ -6,7 +6,7 @@ use crate::*;
 #[near]
 impl Contract {
     // Staking VEX tokens
-    pub(crate) fn stake(&mut self, sender_id: AccountId, amount: U128) {
+    pub(crate) fn stake(&mut self, sender_id: AccountId, amount: U128) -> U128 {
         require!(
             env::predecessor_account_id() == self.vex_token_contract,
             "Only VEX can be staked"
@@ -60,10 +60,12 @@ impl Contract {
             new_total_staked: self.total_staked_balance,
         }
         .emit();
+
+        U128(0)
     }
 
     // Add USDC to the contract
-    pub(crate) fn add_usdc(&mut self, amount: U128) {
+    pub(crate) fn add_usdc(&mut self, amount: U128) -> U128 {
         require!(
             env::predecessor_account_id() == self.usdc_token_contract,
             "Only USDC can be added"
@@ -78,11 +80,13 @@ impl Contract {
                 self.insurance_fund = U128(self.insurance_fund.0 + left_over);
             } else {
                 self.funds_to_add = U128(self.funds_to_add.0 - amount.0);
-                return;
+                return U128(0);
             }
         } else {
             self.insurance_fund = U128(self.insurance_fund.0 + amount.0);
         }
+
+        U128(0)
     }
 
     // Helper function to calculate the number of stake shares from a staked amount
