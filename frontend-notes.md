@@ -72,27 +72,29 @@ You can use this to get the real odds for a bet by diving the result by the bet 
 get_potential_winnings {"match_id": "RUBY-Nexus-17/08/2024", "team": "Team1", "bet_amount": "1000000"}
 
 **get_users_bets**
-Get a list of bet IDs and their associated match IDs for a user.
+Get a list of bet IDs and their associated match IDs for a user. Should be used when viewing bets for a user.
 
 get_users_bets {"bettor": "pivortex.testnet", "from_index": null, "limit": null}
 
 **get_bet**
-Get a single bet
+Get the bet info of a single bet. Should be called when viewing bets for a user.
 
 get_bet {"bettor": "pivortex.testnet", "bet_id": "1"}
 
 **get_user_staked_bal**
-Get the amount of VEX staked by a user
+Get the amount of VEX staked by a user. Should be called to get the amount of VEX staked by a user. Should also be used to determine whether a a user can unstake the inputted amount of VEX (cannot unstake more than they have staked and cannot unstake an amount such that it would leave them will less than 50 VEX staked unless the unstake all).
 
 get_user_staked_bal {"account_id": "pivortex.testnet"}
 
 **get_user_stake_info**
-Get the stake info for a user
-Will need to be used to get when they can next unstake
+Get the stake info for a user. Will need to be used to check whether they are able to unstake (they cannot unstake if the timestamp has not passed).
 
 get_user_stake_info {"account_id": "pivortex.testnet"}
 
-I need to implement a view method to determine whether the stake swap can happen.
+**can_stake_swap_happen**
+Get whether a stake swap can happen. Should be called on the staking page to determine whether the button to swap rewards should be enabled.
+
+can_stake_swap_happen {}
 
 ## Ref finance swap 
 
@@ -103,3 +105,16 @@ For swapping in ref finance [this page](https://github.com/vex-labs/vex-frontend
 This is an example call to get USDC from the faucet:
 https://testnet.nearblocks.io/txns/GyRhE8KBRGCTTN4UwzNCpGc7H4CQoYPiL2hXouLNZfNP
 
+## Testing
+
+There are two main system flows that the frontend should work seamlessly for.
+
+1) A user stakes VEX, a user bets on a match, the match ends and the result is not in favour of the team they bet on (the match will have a net gain), the user can see they lost the bet, the user clicks to distribute the rewards, the user cam see they have gained VEX. The user unstakes a certain amount of VEX (not all).
+
+2) A user stakes VEX, a user bets on a match, the match ends and the result is in favour of the team they bet on (the match will have a net loss), the user claims their winnings, the user should see that they have lost a certain amount of their VEX, the user unstakes all their VEX.
+
+You should also test that the frontend does not allow a user to perform actions that are not possible, it is best to check this in the frontend and with view calls they having a failed transaction.
+
+
+## Methods for testing
+Must be called from the admin account.

@@ -462,6 +462,19 @@ Fetches the amount of USDC that needs to be added to the contract.
 
 Returns the amount of USDC that needs to be added to the contract.
 
+### can_stake_swap_happen
+
+Checks if a stake swap can happen.
+
+**can_stake_swap_happen(&self) -> bool**
+
+1) Calculates the rewards that can be swapped as per **stake_swap_rewards_to_swap**
+2) Checks if the rewards are greater than the minimum swap amount.
+3) If the rewards are greater than the minimum swap amount then return true.
+4) If the rewards are less than the minimum swap amount then return false.
+
+Returns whether a stake swap can happen.
+
 ## Internal functions 
 
 These are methods that are only callable by the contract.
