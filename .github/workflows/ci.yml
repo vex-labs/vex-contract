@@ -44,7 +44,7 @@ jobs:
       - name: Install sccache
         run: |
           curl -L https://github.com/mozilla/sccache/releases/download/v0.9.1/sccache-dist-v0.9.1-x86_64-unknown-linux-musl.tar.gz | tar xz
-          mv sccache-dist-v0.9.1-x86_64-unknown-linux-musl/sccache-dist ~/.cargo/bin/
+          mv sccache-dist-v0.9.1-x86_64-unknown-linux-musl/sccache-dist ~/.cargo/bin/sccache
 
       - name: Configure sccache as RUSTC_WRAPPER
         run: |
