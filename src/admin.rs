@@ -110,6 +110,12 @@ impl Contract {
         relevant_match.match_state = MatchState::Finished;
         relevant_match.winner = Some(winner.clone());
 
+        Event::FinishMatch {
+            match_id: match_id.clone(),
+            winner: winner.clone(),
+        }
+        .emit(); // Change this to be emitted after the first callback down both paths
+
         let total_bets = relevant_match.team_1_total_bets.0 + relevant_match.team_2_total_bets.0
             - relevant_match.team_1_initial_pool.0
             - relevant_match.team_2_initial_pool.0;
@@ -125,6 +131,8 @@ impl Contract {
                         total_bets - relevant_match.team_1_potential_winnings.0,
                         true,
                     )
+                } else if total_bets == relevant_match.team_1_potential_winnings.0 {
+                    return PromiseOrValue::Value(()); // No profit or loss
                 } else {
                     (
                         relevant_match.team_1_potential_winnings.0 - total_bets,
@@ -140,6 +148,8 @@ impl Contract {
                         total_bets - relevant_match.team_2_potential_winnings.0,
                         true,
                     )
+                } else if total_bets == relevant_match.team_2_potential_winnings.0 {
+                    return PromiseOrValue::Value(());
                 } else {
                     (
                         relevant_match.team_2_potential_winnings.0 - total_bets,
@@ -148,12 +158,6 @@ impl Contract {
                 }
             }
         };
-
-        Event::FinishMatch {
-            match_id: match_id.clone(),
-            winner,
-        }
-        .emit(); // Change this to be emitted after the first callback down both paths
 
         // Send to relevant function to handle profit or loss scenario
         match is_profit {
