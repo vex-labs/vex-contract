@@ -1,44 +1,33 @@
 This file contains a list of example commands to be run in near-cli-rs
 
-This is old
 
-Remember to get cusd tokens on your own account
+The contract needs to be initialized with exactly 100 VEX
 
 Create account 
-cargo near create-dev-account use-specific-account-id sexyvexycontract.testnet autogenerate-new-keypair save-to-legacy-keychain network-config testnet create
+near account create-account fund-myself contract.betvex.testnet '5 NEAR' use-manually-provided-public-key ed25519:2wdfLHDdRxF6yK9of1etPFJwC5ueC4Zc8rCTUhBaUcZm sign-as betvex.testnet network-config testnet sign-with-legacy-keychain send
 
-send ft to contract account to register
-near tokens pivortex.testnet send-ft usdc.betvex.testnet sexyvexycontract.testnet amount-ft '1 USDC' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' network-config testnet sign-with-legacy-keychain send
+send usdc to contract account to register
+near tokens pivortex.testnet send-ft usdc.betvex.testnet contract.betvex.testnet amount-ft '1 USDC' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' network-config testnet sign-with-legacy-keychain send
+
+send 100 VEX to contract account
+near tokens pivortex.testnet send-ft token.betvex.testnet contract.betvex.testnet amount-ft '100 VEX' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' network-config testnet sign-with-legacy-keychain send
+
+register the contract in ref-finance
+near contract call-function as-transaction ref-finance-101.testnet storage_deposit json-args '{"account_id": "contract.betvex.testnet"}' prepaid-gas '100.0 Tgas' attached-deposit '0.1 NEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
+
+The tokens on testnet are whitelisted in ref-finance so you do not need to register the user and the contract with the tokens
 
 deploy and init
-cargo near deploy sexyvexycontract.testnet with-init-call init json-args '{"admin": "vexsharedaccount.testnet", "usdc_contract": "usdc.betvex.testnet"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-legacy-keychain send
-
-get_admin
-near contract call-function as-read-only sexyvexycontract.testnet get_admin json-args {} network-config testnet now
+cargo near deploy build-non-reproducible-wasm contract.betvex.testnet with-init-call init json-args '{"admin": "admin.betvex.testnet", "usdc_token_contract": "usdc.betvex.testnet", "vex_token_contract": "token.betvex.testnet", "treasury": "treasury.betvex.testnet", "ref_contract": "ref-finance-101.testnet", "ref_pool_id": "2197", "rewards_period": "60000000000", "unstake_time_buffer": "30000000000", "min_swap_amount": "1000000"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' network-config testnet sign-with-legacy-keychain send
 
 create_match
-near contract call-function as-transaction sexyvexycontract.testnet create_match json-args '{"game": "Overwatch", "team_1": "a team", "team_2": "b team", "in_odds_1": 1.4, "in_odds_2": 2.9, "date": "28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
-
-bet
-near contract call-function as-transaction usdc.betvex.testnet ft_transfer_call json-args '{"receiver_id": "sexyvexycontract.testnet", "amount": "1000000", "msg": "{\"match_id\": \"a team-b team-28/08/2024\", \"team\": \"Team1\"}"}' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
-
-get_match
-near contract call-function as-read-only sexyvexycontract.testnet get_match json-args '{"match_id": "a team-b team-28/08/2024"}' network-config testnet now
-
-get_matches
-near contract call-function as-read-only sexyvexycontract.testnet get_matches json-args '{"from_index": null, "limit": null}' network-config testnet now
-
-get_users_bets
-near contract call-function as-read-only sexyvexycontract.testnet get_users_bets json-args '{"bettor": "pivortex.testnet", "from_index": null, "limit": null}' network-config testnet now
-
-get_bet 
-near contract call-function as-read-only sexyvexycontract.testnet get_bet json-args '{"bettor": "pivortex.testnet", "bet_id": "1"}' network-config testnet now
-
-get_potential_winnings
-near contract call-function as-read-only sexyvexycontract.testnet get_potential_winnings json-args '{"match_id": "a team-b team-28/08/2024", "team": "Team1", "bet_amount": "3928478932748332423"} ' network-config testnet now
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "Overwatch", "team_1": "a team", "team_2": "b team", "in_odds_1": 1.4, "in_odds_2": 2.9, "date": "28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
 
 end_betting
-near contract call-function as-transaction sexyvexycontract.testnet end_betting json-args '{"match_id": "a team-b team-28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
+near contract call-function as-transaction contract.betvex.testnet end_betting json-args '{"match_id": "a team-b team-28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
 
 finish_match 
-near contract call-function as-transaction sexyvexycontract.testnet finish_match json-args '{"match_id": "a team-b team-28/08/2024", "winner": "Team1"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as vexsharedaccount.testnet network-config testnet sign-with-legacy-keychain send
+near contract call-function as-transaction contract.betvex.testnet finish_match json-args '{"match_id": "a team-b team-28/08/2024", "winner": "Team1"}' prepaid-gas '300.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+bet on a match
+near contract call-function as-transaction usdc.betvex.testnet ft_transfer_call json-args '{"receiver_id": "contract.betvex.testnet", "amount": "1000000", "msg": "{\"Bet\": {\"match_id\": \"a team-b team-28/08/2024\", \"team\": \"Team1\"}}"}' prepaid-gas '100.0 Tgas' attached-deposit '1 yoctoNEAR' sign-as pivortex.testnet network-config testnet sign-with-legacy-keychain send
