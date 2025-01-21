@@ -22,13 +22,7 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-
-      - uses: Swatinem/rust-cache@v1
-
       - name: Run unit tests
-        run: cargo test --lib --release
+        uses: actions/checkout@v4
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        run: cargo test --lib --all-features
