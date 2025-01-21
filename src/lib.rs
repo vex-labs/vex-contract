@@ -263,3 +263,6 @@ impl Contract {
         }
     }
 }
+
+#[cfg(test)]
+mod unit_tests;
