@@ -6,6 +6,8 @@ Please let me know if the contract needs any changes to make the frontend/indexe
 
 ## Info
 
+The contract is deployed at contract.betvex.testnet.
+
 The admin on the contract is admin.betvex.testnet if you need to use any of the admin methods. It has private key "ed25519:2jDDEz3SDzY7ysvRoqeRQtzoAhJjybMvqePBHZKV4SkXquRLaroJpyxwCnPkc8oVREv3NMXPDfEHDMFySdifbRMQ".
 
 The account used to create other accounts is users.betvex.testnet. It has private key "ed25519:2Y4pcSrMSbyfaDkhhtHoyMV8N3nRqUUZF1Zir4itTPWPYEJo4AxxHmtQ6ewHXcBdV3ozxSMaXMMUzj4PkBZjb7Qx".
@@ -17,6 +19,12 @@ The $VEX contract is token.betvex.testnet.
 To get these tokens ask Owen.
 
 Also take a look at the DeFi docs for information about the tokens like how many decimals they have.
+
+The rewards period for the deployed contract has been set to 1 minute (this is the time it takes for a all rewards to be distributed for a given match). 
+
+The unstake time buffer has been set to 30 seconds (this is the time it takes for a user to be able to unstake after last staking).
+
+The min swap amount has been set to 1 USDC (this is the minimum amount of USDC that can be swapped by stake_swap).
 
 ## Calls needed
 
@@ -118,3 +126,130 @@ You should also test that the frontend does not allow a user to perform actions 
 
 ## Methods for testing
 Must be called from the admin account.
+
+create_match
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "Overwatch", "team_1": "a team", "team_2": "b team", "in_odds_1": 1.4, "in_odds_2": 2.9, "date": "28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+end_betting
+near contract call-function as-transaction contract.betvex.testnet end_betting json-args '{"match_id": "a team-b team-28/08/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+finish_match 
+near contract call-function as-transaction contract.betvex.testnet finish_match json-args '{"match_id": "a team-b team-28/08/2024", "winner": "Team1"}' prepaid-gas '300.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+## List of example matches 
+These have already been added to the contract.
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "counter-strike-2", "team_1": "Natus_Vincere", "team_2": "Fnatic", "in_odds_1": 1.17, "in_odds_2": 4.5, "date": "17/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "counter-strike-2", "team_1": "Faze", "team_2": "Cloud9", "in_odds_1": 1.35, "in_odds_2": 3.0, "date": "17/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "counter-strike-2", "team_1": "Team_Spirit", "team_2": "B8", "in_odds_1": 1.3, "in_odds_2": 3.3, "date": "21/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "counter-strike-2", "team_1": "Astralis", "team_2": "9_Pandas", "in_odds_1": 1.52, "in_odds_2": 2.4, "date": "21/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "overwatch-2", "team_1": "Team_Falcons", "team_2": "Twisted_Minds", "in_odds_1": 1.1, "in_odds_2": 5.8, "date": "22/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "overwatch-2", "team_1": "SSG", "team_2": "NTMR", "in_odds_1": 1.28, "in_odds_2": 3.3, "date": "22/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "overwatch-2", "team_1": "Crazy_Raccoon", "team_2": "NRG_Shock", "in_odds_1": 1.06, "in_odds_2": 7.0, "date": "23/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "overwatch-2", "team_1": "Toronto_Defiant", "team_2": "ENCE", "in_odds_1": 1.15, "in_odds_2": 4.8, "date": "23/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "valorant", "team_1": "KRÜ_BLAZE", "team_2": "ZETA_DIVISION", "in_odds_1": 1.6, "in_odds_2": 2.4, "date": "08/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "valorant", "team_1": "FlyQuest_RED", "team_2": "Xipto_Esports", "in_odds_1": 1.9, "in_odds_2": 1.95, "date": "08/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+near contract call-function as-transaction contract.betvex.testnet create_match json-args '{"game": "valorant", "team_1": "G2_Gozen", "team_2": "Shopify_Rebellion", "in_odds_1": 1.4, "in_odds_2": 2.8, "date": "10/11/2024"}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as admin.betvex.testnet network-config testnet sign-with-legacy-keychain send
+
+
+
+
+
+    {
+        "game": "counter-strike-2",
+        "team_1": "Natus_Vincere",
+        "team_2": "Fnatic",
+        "in_odds_1": 1.17,
+        "in_odds_2": 4.5,
+        "date": "17/11/2024"
+    },
+    {
+        "game": "counter-strike-2",
+        "team_1": "Faze",
+        "team_2": "Cloud9",
+        "in_odds_1": 1.35,
+        "in_odds_2": 3.0,
+        "date": "17/11/2024"
+    },
+    {
+        "game": "counter-strike-2",
+        "team_1": "Team_Spirit",
+        "team_2": "B8",
+        "in_odds_1": 1.3,
+        "in_odds_2": 3.3,
+        "date": "21/11/2024"
+    },
+    {
+        "game": "counter-strike-2",
+        "team_1": "Astralis",
+        "team_2": "9_Pandas",
+        "in_odds_1": 1.52,
+        "in_odds_2": 2.4,
+        "date": "21/11/2024"
+    },
+    {
+        "game": "overwatch-2",
+        "team_1": "Team_Falcons",
+        "team_2": "Twisted_Minds",
+        "in_odds_1": 1.1,
+        "in_odds_2": 5.8,
+        "date": "22/11/2024"
+    },
+    {
+        "game": "overwatch-2",
+        "team_1": "SSG",
+        "team_2": "NTMR",
+        "in_odds_1": 1.28,
+        "in_odds_2": 3.3,
+        "date": "22/11/2024"
+    },
+    {
+        "game": "overwatch-2",
+        "team_1": "Crazy_Raccoon",
+        "team_2": "NRG_Shock",
+        "in_odds_1": 1.06,
+        "in_odds_2": 7.0,
+        "date": "23/11/2024"
+    },
+    {
+        "game": "overwatch-2",
+        "team_1": "Toronto_Defiant",
+        "team_2": "ENCE",
+        "in_odds_1": 1.15,
+        "in_odds_2": 4.8,
+        "date": "23/11/2024"
+    },
+    {
+        "game": "valorant",
+        "team_1": "KRÜ_BLAZE",
+        "team_2": "ZETA_DIVISION",
+        "in_odds_1": 1.6,
+        "in_odds_2": 2.4,
+        "date": "08/11/2024"
+    },
+    {
+        "game": "valorant",
+        "team_1": "FlyQuest_RED",
+        "team_2": "Xipto_Esports",
+        "in_odds_1": 1.9,
+        "in_odds_2": 1.95,
+        "date": "08/11/2024"
+    },
+    {
+        "game": "valorant",
+        "team_1": "G2_Gozen",
+        "team_2": "Shopify_Rebellion",
+        "in_odds_1": 1.4,
+        "in_odds_2": 2.8,
+        "date": "10/11/2024"
+    }
