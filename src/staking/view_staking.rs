@@ -1,3 +1,5 @@
+use near_sdk::env;
+
 use crate::*;
 
 #[near]
@@ -57,5 +59,47 @@ impl Contract {
     // Get amount of USDC that needs to be added to the contract
     pub fn get_funds_to_add(&self) -> U128 {
         self.funds_to_add
+    }
+
+    pub fn can_stake_swap_happen(&self) -> bool {
+        if self.staking_rewards_queue.is_empty() {
+            return false;
+        }
+
+    let time_passed = env::block_timestamp() - self.last_stake_swap_timestamp.0;
+    // Check if the first item in staking rewards queue has expired
+    // repeat until the first item in the queue has not expired
+    let mut finished_matches_rewards: u128 = 0;
+    let mut new_usdc_staking_rewards = self.usdc_staking_rewards.0;
+    for i in self.staking_rewards_queue.iter() {
+        if i.stake_end_time.0 < env::block_timestamp() {
+            let finished_match_time_passed =
+                i.stake_end_time.0 - self.last_stake_swap_timestamp.0;
+
+            // Get rewards for this match has passed
+            let passed_match_reward = (U256::from(finished_match_time_passed)
+                * U256::from(i.staking_rewards.0)
+                / U256::from(self.rewards_period))
+            .as_u128();
+
+            finished_matches_rewards += passed_match_reward;
+            new_usdc_staking_rewards -= i.staking_rewards.0;
+                } else {
+                    break;
+                }
+        }
+
+    // Calculate the rewards for the matches that have not expired
+    let active_match_rewards = (U256::from(time_passed) * U256::from(new_usdc_staking_rewards)
+        / U256::from(self.rewards_period))
+    .as_u128();
+
+    let total_rewards_to_swap = finished_matches_rewards + active_match_rewards;
+
+    if total_rewards_to_swap > self.min_swap_amount {
+        return true;
+    }
+
+    false
     }
 }
