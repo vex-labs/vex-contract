@@ -28,7 +28,5 @@ jobs:
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
 
-      - uses: Swatinem/rust-cache@v2
-
       - name: Run unit tests
-        run: cargo test --lib --release
+        run: cargo test --lib --all-features
