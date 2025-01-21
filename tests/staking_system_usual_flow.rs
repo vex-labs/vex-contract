@@ -664,14 +664,14 @@ async fn test_staking_system_usual_flow() -> Result<(), Box<dyn std::error::Erro
     assert!(result.is_success(), "unstake_all failed on Alice's unstake");
 
     // Check that Alice's staked balance is zero
-    let alice_staked_balance: U128 = main_contract
+    let alice_staked_balance: Option<U128> = main_contract
         .view("get_user_staked_bal")
         .args_json(serde_json::json!({"account_id": alice.id()}))
         .await?
         .json()?;
-    assert_eq!(
-        alice_staked_balance,
-        U128(0),
+
+    assert!(
+        alice_staked_balance.is_none(),
         "Alice's staked balance is not correct after unstaking all"
     );
 
