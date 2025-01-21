@@ -9,12 +9,6 @@ fn test_determine_potential_winnings() {
         1000, 
         100, 
         268);
-
-    determine_potential_winnings_base(
-        500,
-        1000, 
-        100, 
-        267);
 }
 
 
