@@ -22,7 +22,6 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Run unit tests
-        uses: actions/checkout@v4
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        run: cargo test --lib --all-features
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: cargo test --lib --all-features
