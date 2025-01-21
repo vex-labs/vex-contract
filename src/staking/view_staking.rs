@@ -5,13 +5,15 @@ use crate::*;
 #[near]
 impl Contract {
     // Get $VEX staking balance for a user if they were to unstake now
-    pub fn get_user_staked_bal(&self, account_id: AccountId) -> U128 {
+    pub fn get_user_staked_bal(&self, account_id: AccountId) -> Option<U128> {
         let relevant_account = match self.users_stake.get(&account_id) {
             Some(account) => account,
-            None => return U128(0),
+            None => return None,
         };
 
-        U128(self.staked_amount_from_num_shares_rounded_down(relevant_account.stake_shares.0))
+        Some(U128(self.staked_amount_from_num_shares_rounded_down(
+            relevant_account.stake_shares.0,
+        )))
     }
 
     // Get a user's stake info
