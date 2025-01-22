@@ -24,8 +24,8 @@ fn determine_potential_winnings_base(team_1_total_bets: u128, team_2_total_bets:
 
     let actual_potential_winnings = determine_potential_winnings(&team_1, &team_1_total_bets, &team_2_total_bets, &bet_amount);
 
-    assert!(
-        expected_potential_winnings == actual_potential_winnings,
+    assert_eq!(
+        expected_potential_winnings, actual_potential_winnings,
         "Winnings calculation error. Actual: {} Expected: {}", 
         actual_potential_winnings.0, 
         expected_potential_winnings.0
