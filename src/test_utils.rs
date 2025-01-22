@@ -24,8 +24,8 @@ fn treasury_account() -> AccountId {
     AccountId::from_str("treasury.testnet").unwrap()
 }
 
-fn refinance_account() -> AccountId {
-    AccountId::from_str("refinance.testnet").unwrap()
+fn ref_finance_account() -> AccountId {
+    AccountId::from_str("ref_finance.testnet").unwrap()
 }
 
 const TEST_REF_POOL_ID: U64 = U64(1);
