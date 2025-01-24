@@ -13,7 +13,7 @@ impl Contract {
         self.admin = new_admin;
     }
 
-    // Creates a new match
+    // Creates a new match 
     pub fn create_match(
         &mut self,
         game: String,
