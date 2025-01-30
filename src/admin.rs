@@ -13,7 +13,7 @@ impl Contract {
         self.admin = new_admin;
     }
 
-    // Creates a new match 
+    // Creates a new match
     pub fn create_match(
         &mut self,
         game: String,
@@ -57,9 +57,9 @@ impl Contract {
 
         // Insert new match
         self.matches.insert(match_id.clone(), new_match);
- 
 
-        let date_number = date.split('/')
+        let date_number = date
+            .split('/')
             .collect::<Vec<&str>>()
             .into_iter()
             .flat_map(|s| s.parse::<u64>())
