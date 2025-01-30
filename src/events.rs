@@ -38,7 +38,7 @@ pub enum Event<'a> {
         amount: U128,
         match_id: MatchId,
         team: Team,
-        potential_winnings: U128, 
+        potential_winnings: U128,
         new_team_1_pool_size: U128,
         new_team_2_pool_size: U128,
     },
