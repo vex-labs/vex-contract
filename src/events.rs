@@ -15,8 +15,12 @@ const EVENT_STANDARD_VERSION: &str = "1.0.0";
 pub enum Event<'a> {
     NewMatch {
         match_id: MatchId,
-        team_1_total_bets: U128,
-        team_2_total_bets: U128,
+        game: String,
+        date: U64,
+        team_1: String,
+        team_2: String,
+        team_1_initial_pool: U128,
+        team_2_initial_pool: U128,
     },
     EndBetting {
         match_id: MatchId,
@@ -34,7 +38,9 @@ pub enum Event<'a> {
         amount: U128,
         match_id: MatchId,
         team: Team,
-        potential_winnings: U128, // May need to log the new pool sizes here to display the new odds
+        potential_winnings: U128, 
+        new_team_1_pool_size: U128,
+        new_team_2_pool_size: U128,
     },
     ClaimWinnings {
         account_id: &'a AccountId,

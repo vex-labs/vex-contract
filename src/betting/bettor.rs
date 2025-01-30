@@ -1,6 +1,7 @@
 use near_sdk::json_types::U128;
 use near_sdk::{env, near, require, Gas, NearToken, PromiseError};
 
+use crate::events::Event;
 pub use crate::ext::*;
 use crate::*;
 
@@ -79,13 +80,15 @@ impl Contract {
 
         bets_by_user.insert(self.last_bet_id, new_bet);
 
-        events::Event::Bet {
+        Event::Bet {
             account_id: &sender_id,
             bet_id: self.last_bet_id,
             amount,
             match_id,
             team,
             potential_winnings,
+            new_team_1_pool_size: relevant_match.team_1_total_bets,
+            new_team_2_pool_size: relevant_match.team_2_total_bets,
         }
         .emit();
 

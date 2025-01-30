@@ -42,9 +42,9 @@ impl Contract {
         let team_2_potential_winnings = U128(0);
 
         let new_match = Match {
-            game,
-            team_1,
-            team_2,
+            game: game.clone(),
+            team_1: team_1.clone(),
+            team_2: team_2.clone(),
             team_1_total_bets,
             team_2_total_bets,
             team_1_initial_pool: team_1_total_bets,
@@ -57,11 +57,22 @@ impl Contract {
 
         // Insert new match
         self.matches.insert(match_id.clone(), new_match);
+ 
+
+        let date_number = date.split('/')
+            .collect::<Vec<&str>>()
+            .into_iter()
+            .flat_map(|s| s.parse::<u64>())
+            .fold(0, |acc, x| acc * 100 + x);
 
         Event::NewMatch {
             match_id,
-            team_1_total_bets,
-            team_2_total_bets,
+            game,
+            date: U64(date_number),
+            team_1,
+            team_2,
+            team_1_initial_pool: team_1_total_bets,
+            team_2_initial_pool: team_2_total_bets,
         }
         .emit();
     }
