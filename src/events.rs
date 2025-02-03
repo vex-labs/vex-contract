@@ -16,7 +16,7 @@ pub enum Event<'a> {
     NewMatch {
         match_id: MatchId,
         game: String,
-        date: U64,
+        date: String,
         team_1: String,
         team_2: String,
         team_1_initial_pool: U128,
