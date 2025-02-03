@@ -58,17 +58,10 @@ impl Contract {
         // Insert new match
         self.matches.insert(match_id.clone(), new_match);
 
-        let date_number = date
-            .split('/')
-            .collect::<Vec<&str>>()
-            .into_iter()
-            .flat_map(|s| s.parse::<u64>())
-            .fold(0, |acc, x| acc * 100 + x);
-
         Event::NewMatch {
             match_id,
             game,
-            date: U64(date_number),
+            date,
             team_1,
             team_2,
             team_1_initial_pool: team_1_total_bets,
