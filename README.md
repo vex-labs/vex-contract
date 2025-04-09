@@ -1,5 +1,8 @@
 # vex-contract
 
+> [!Caution]
+> This is definitely not production-ready; significant modifications need to be made, you should get an audit and consult some legal people before launching this or something similar.
+
 This repo holds the main VEX contract that includes a betting and staking system.
 Please note that these docs are currently out of date since the staking system was added 
 
